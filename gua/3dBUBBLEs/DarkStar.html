@@ -1,0 +1,203 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>3D BUBBLEs</title>
+		<style>
+			 body {
+				width: 100;
+			 	background-color: black;
+			 	background-image: radial-gradient(white 10%, white 20%, black);
+		        margin: 0px;
+		    }
+		</style>
+	</head>
+	<body>
+		<script src="./lib/three.js"></script>
+		<script>
+			const windowW = window.innerWidth;
+			const windowH = window.innerHeight;
+			//window.moveTo(0,0);
+			//window.resizeTo(windowH/2,windowH);
+			//window.onresize=new Function("window.resizeTo(windowH/2,windowH);") 
+
+			// 全局参数设置
+			const bubbles = [];
+			var StartPos = 0;
+			var DisCamera2Start = 200;
+			var DisLight2Start = 70;
+			var rate = 2;
+			var MoveCameraSpeed = 0.2/rate;
+			var MoveBubbleSpeedMax = 0.3/rate;
+			var BubbleRotateSpeed = 0.007/rate;
+			var CreateBubbleFrame = 50*rate;
+
+			const scene = new THREE.Scene();
+			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+			const renderer = new THREE.WebGLRenderer({alpha:true});
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+			
+			// 设置点光源
+			//const LightSphere = new THREE.SphereGeometry( 10, 16, 8 );
+			PointLight = new THREE.PointLight( 0xffffff, 1000000, 0 );
+			//PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
+			PointLight.visible = true;
+			PointLight.position.z = StartPos+DisLight2Start;
+			scene.add( PointLight );
+
+			// 鼠标点击
+			var raycaster = new THREE.Raycaster();
+			var mouse = new THREE.Vector2();
+
+			// 生成气泡
+			setInterval(CreateBubbles,CreateBubbleFrame);
+
+			// 运动动画
+			animate();
+
+			window.addEventListener('click', onMouseClick, false);
+
+			function onMouseClick(event) {
+				//通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
+				
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+				// 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+				raycaster.setFromCamera(mouse, camera);
+
+				// 获取raycaster直线和所有模型相交的数组集合
+				var intersects = raycaster.intersectObjects(scene.children);
+
+				//console.log(intersects);
+
+				//将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
+				for (var i = 0; i < intersects.length; i++) {					
+					var obj = intersects[i].object;
+					if (1==obj.bubbleParam.isClicked) {
+						continue;
+					}
+					obj.bubbleParam.isClicked = 1;
+					var tmpPosX = obj.position.x;
+					var tmpPosY = obj.position.y;
+					var tmpPosZ = obj.position.z;
+					var tmpRotX = obj.rotation.x;
+					var tmpRotY = obj.rotation.y;
+					var tmpRotZ = obj.rotation.z;
+					var tmpBubbleParam = obj.bubbleParam;
+					tmpBubbleParam.speedX = tmpBubbleParam.speedX/10;
+					tmpBubbleParam.speedY = tmpBubbleParam.speedY/10;
+					scene.remove( obj );
+
+					//console.log(obj.position);
+					var res = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
+						var NewMaterial = new THREE.MeshBasicMaterial( {color:0x00ff00} );
+						//NewMaterial.map = res;
+						NewMaterial.transparent = true;
+						NewMaterial.opacity = 0.5;
+						var NewObj = new THREE.Mesh( obj.geometry, NewMaterial );
+						//console.log(tmpPos);
+						NewObj.position.x = tmpPosX;
+						NewObj.position.y = tmpPosY;
+						NewObj.position.z = tmpPosZ;
+						NewObj.rotation.x = tmpRotX;
+						NewObj.rotation.y = tmpRotY;
+						NewObj.rotation.y = tmpRotZ;
+						NewObj.bubbleParam = tmpBubbleParam;
+						//console.log(NewObj.position);
+						bubbles.push( NewObj );
+						scene.add( NewObj );
+					});
+				}
+
+			}
+			
+			function CreateBubbles() {
+				var bubbleParam = {
+						//x: (Math.random() - 0.5)*windowW/2,
+						//y: (Math.random() - 0.5)*windowH/2,
+						//applitude: Math.random(),
+						//frequency: Math.random() * 0.01 + 0.01,
+						speedX: (Math.random() - 0.5)*MoveBubbleSpeedMax,
+						speedY: (Math.random() - 0.5)*MoveBubbleSpeedMax,
+						speedZ: (Math.random() - 0.5)*MoveCameraSpeed*1.5,
+						//speedZ: (Math.random() - 0.5)*0.5,
+						//radiusChange: 0,
+						MaxRadius: Math.random()*4+3,
+						InitRadius: Math.random()*3+2,
+						isClicked: 0,
+						//color: bubbleColor[Math.floor(Math.random()*bubbleColor.length)],
+						//color: Math.random() * 25 + 175,
+						//isSpeedChanged:0,
+						//lightness: Math.random() * 10 + 65,
+						//apcChange: 0.01,
+						//apcChangeCnt: 1000,
+						//isClicked: 0,
+						//apc: 0
+					};
+				const geometry = new THREE.SphereGeometry(bubbleParam.InitRadius,30,30);
+				//const material = new THREE.MeshPhongMaterial();
+
+				var texture = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
+				const material = new THREE.MeshPhongMaterial( {color:0xffffff}); 
+				material.map = res;
+				//material.transparent = true;
+				//material.opacity = 0.5;
+				material.bumpMap = res;
+				material.bumpScale = 0.9;
+				var bubble = new THREE.Mesh( geometry, material );
+
+				bubble.position.x = 0;
+				bubble.position.y = 0;
+
+				bubble.position.z = StartPos;
+				bubble.bubbleParam = bubbleParam;
+				//PointLight.position.z -= 0.2;
+				scene.add(bubble);
+				bubbles.push(bubble);});
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+
+				if (bubbles.length>500) {
+					bubbles.shift();
+				}
+
+				for ( let i = 0; i < bubbles.length; i ++ ) {
+
+					const bubble = bubbles[ i ];
+					if (bubble.bubbleParam.isClicked == 1) {
+						bubble.position.z -= MoveCameraSpeed;
+						continue;
+					}
+
+					bubble.position.x += bubble.bubbleParam.speedX;
+					bubble.position.y += bubble.bubbleParam.speedY;
+					bubble.position.z += bubble.bubbleParam.speedZ;
+					
+					bubble.rotation.x += BubbleRotateSpeed;
+					bubble.rotation.y += BubbleRotateSpeed;
+					bubble.rotation.z += BubbleRotateSpeed;
+
+					//console.log(bubble.position.z);
+					//console.log(camera.position.z);
+
+					if (bubble.position.z>camera.position.z) {
+						scene.remove(bubble);
+					}
+				}
+				MoveCamera();
+				renderer.render( scene, camera );
+			};
+
+			function MoveCamera() {
+				StartPos -= MoveCameraSpeed;
+				camera.position.z = StartPos+DisCamera2Start;
+				PointLight.position.z = StartPos+DisLight2Start;
+			}
+		</script>
+	</body>
+</html>
