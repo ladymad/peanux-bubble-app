@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Texture</title>
+		<style>
+			body {
+				background-color: black;
+				background-image: radial-gradient(white 10%, white 20%, black);
+				margin: 0;
+			}
+			canvas {
+				width: 100%;
+				height: 100%
+			}
+		</style>
+	</head>
+	<body>
+		<script src="../../lib/three.js"></script>
+		<script>
+			const scene = new THREE.Scene();
+			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			camera.position.z = 5;
+
+			const renderer = new THREE.WebGLRenderer({alpha:true});
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+			const LightSphere = new THREE.SphereGeometry( 0.5, 16, 8 );
+			PointLight = new THREE.PointLight( 0xffffff, 1000000000, 0 );
+			//PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0x0 } ) ) );
+			PointLight.visible = true;
+			PointLight.position.z = -100;
+			scene.add( PointLight );
+
+			var bubbles = [];
+			var bubbles_glow = [];
+
+			var raycaster = new THREE.Raycaster();
+			var mouse = new THREE.Vector2();
+
+			var vertexShader = [
+				'varying vec3	vVertexWorldPosition;',
+				'varying vec3	vVertexNormal;',
+				'varying vec4	vFragColor;',
+				'void main(){',
+				'	vVertexNormal	= normalize(normalMatrix * normal);',//将法线转换到视图坐标系中
+				'	vVertexWorldPosition	= (modelMatrix * vec4(position, 1.0)).xyz;',//将顶点转换到世界坐标系中
+				'	// set gl_Position',
+				'	gl_Position	= projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+				'}'
+
+			].join('\n');
+
+			//大气层效果
+			THREE.AeroSphere = {
+				uniforms: {
+					coeficient: {
+						type: "f",
+						value: 1.0
+					},
+					power: {
+						type: "f",
+						value: 2
+					},
+					glowColor: {
+						type: "c",
+						value: new THREE.Color(0x0f0f0f )
+					}
+				},
+				vertexShader: vertexShader,
+				fragmentShader: [
+					'uniform vec3	glowColor;',
+					'uniform float	coeficient;',
+					'uniform float	power;',
+
+					'varying vec3	vVertexNormal;',
+					'varying vec3	vVertexWorldPosition;',
+
+					'varying vec4	vFragColor;',
+
+					'void main(){',
+					'	vec3 worldCameraToVertex= vVertexWorldPosition - cameraPosition;',	//世界坐标系中从相机位置到顶点位置的距离
+					'	vec3 viewCameraToVertex	= (viewMatrix * vec4(worldCameraToVertex, 0.0)).xyz;',//视图坐标系中从相机位置到顶点位置的距离
+					'	viewCameraToVertex	= normalize(viewCameraToVertex);',//规一化
+					'	float intensity		= pow(coeficient + dot(vVertexNormal, viewCameraToVertex), power);',
+					'	gl_FragColor		= vec4(glowColor, intensity);',
+					'}'//vVertexNormal视图坐标系中点的法向量
+					//viewCameraToVertex视图坐标系中点到摄像机的距离向量
+					//dot点乘得到它们的夹角的cos值
+					//从中心向外面角度越来越小（从钝角到锐角）从cos函数也可以知道这个值由负变正，不透明度最终从低到高
+				].join('\n')
+			}
+
+			//辉光效果Glow
+			THREE.GlowSphere = {
+				uniforms: {
+					coeficient: {
+						type: "f",
+						value: 0.2
+					},
+					power: {
+						type: "f",
+						value: 0
+					},
+					glowColor: {
+						type: "c",
+						value: new THREE.Color(0x0f0f0f)
+					}
+				},
+				vertexShader: vertexShader,
+				fragmentShader: [
+					'uniform vec3	glowColor;',
+					'uniform float	coeficient;',
+					'uniform float	power;',
+
+					'varying vec3	vVertexNormal;',
+					'varying vec3	vVertexWorldPosition;',
+
+					'varying vec4	vFragColor;',
+
+					'void main(){',
+					'	vec3 worldVertexToCamera= cameraPosition - vVertexWorldPosition;',	//世界坐标系中顶点位置到相机位置到的距离
+					'	vec3 viewCameraToVertex	= (viewMatrix * vec4(worldVertexToCamera, 0.0)).xyz;',//视图坐标系中从相机位置到顶点位置的距离
+					'	viewCameraToVertex	= normalize(viewCameraToVertex);',//规一化
+					'	float intensity		= coeficient + dot(vVertexNormal, viewCameraToVertex);',
+					'	if(intensity > 0.65){ intensity = 0.0;}',
+					'	gl_FragColor		= vec4(glowColor, intensity);',
+					'}'//vVertexNormal视图坐标系中点的法向量
+					//viewCameraToVertex视图坐标系中点到摄像机的距离向量
+					//dot点乘得到它们的夹角的cos值
+					//从中心向外面角度越来越大（从锐角到钝角）从cos函数也可以知道这个值由负变正，不透明度最终从高到低
+				].join('\n')
+			}
+
+			CreateBubble();
+			animate();
+
+			window.addEventListener('click', onMouseClick, false);
+
+			//球体 辉光 大气层
+			//console.log(THREE.AeroSphere);
+			function Createshad() {  
+				console.log("gua");      
+				var material1 = new THREE.ShaderMaterial({
+					uniforms: THREE.AeroSphere.uniforms,
+					vertexShader: THREE.AeroSphere.vertexShader,
+					fragmentShader: THREE.AeroSphere.fragmentShader,
+					blending: THREE.NormalBlending,
+					transparent: true,
+					opacity: 0.01,
+					depthWrite:false
+				});
+				var material2 = new THREE.ShaderMaterial({
+					uniforms: THREE.GlowSphere.uniforms,
+					vertexShader: THREE.GlowSphere.vertexShader,
+					fragmentShader: THREE.GlowSphere.fragmentShader,
+					blending: THREE.NormalBlending,
+					transparent: false,
+				});
+
+				var sphere = new THREE.SphereBufferGeometry(1.2, 32, 32);
+				var mesh = new THREE.Mesh(sphere, material1);
+				mesh.position.x=2;mesh.position.y=0;mesh.position.z=0;
+				scene.add(mesh);
+				bubbles_glow.push(mesh);
+
+				var sphere2 = new THREE.SphereBufferGeometry(1.1, 32, 32);
+				var mesh2 = new THREE.Mesh(sphere2, material1);
+				mesh2.position.x=2;mesh2.position.y=0;mesh2.position.z=0;
+				scene.add(mesh2);
+				bubbles_glow.push(mesh2);
+
+				var sphere3 = new THREE.SphereBufferGeometry(1, 32, 32);
+				var mesh3 = new THREE.Mesh(sphere3, material2);
+				mesh3.position.x=2;mesh3.position.y=0;mesh3.position.z=0;
+				//mesh2.position.x = 15;
+				scene.add(mesh3);
+				bubbles_glow.push(mesh3);
+			}
+			//
+
+			function onMouseClick(event) {
+				//通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
+
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+				// 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+				raycaster.setFromCamera(mouse, camera);
+
+				// 获取raycaster直线和所有模型相交的数组集合
+				var intersects = raycaster.intersectObjects(scene.children);
+
+				console.log(intersects);
+
+				//将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
+				for (var i = 0; i < intersects.length; i++) {
+					//intersects[i].object.material.bumpMap=0;
+					var obj = intersects[i].object;
+					var tmpPosX = obj.position.x;
+					var tmpPosY = obj.position.y;
+					var tmpPosZ = obj.position.z;
+					scene.remove(obj);
+					//console.log(obj);
+					Createshad();
+				}
+
+			}
+
+			function CreateBubble() {
+				var geometry = new THREE.SphereGeometry(1,30,30);
+				var res = new THREE.TextureLoader().load("../../tex/tex1.jpg", res=>{
+				var material = new THREE.MeshPhongMaterial( {color:0xffffff} );
+				//material.map = res;
+				material.bumpMap = res;
+				material.bumpScale = 0.5;
+				bubble = new THREE.Mesh( geometry, material );
+				scene.add( bubble );
+
+				bubble.position.x = 2;
+				bubble.position.y = 0;
+				bubble.position.z = 0;
+
+				bubbles.push(bubble);});
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+
+				for ( let i = 0; i < bubbles.length; i ++ ) {
+
+					const bubble = bubbles[ i ];
+					bubble.rotation.x += 0.01;
+					bubble.rotation.y += 0.01;
+					bubble.rotation.z += 0.01;
+				}
+
+				for ( let i = 0; i < bubbles_glow.length; i ++ ) {
+
+					const bubble_glow = bubbles_glow[ i ];
+					bubble_glow.rotation.x += 0.01;
+					bubble_glow.rotation.y += 0.01;
+					bubble_glow.rotation.z += 0.01;
+				}
+
+				renderer.render( scene, camera );
+			};
+
+		</script>
+	</body>
+</html>
