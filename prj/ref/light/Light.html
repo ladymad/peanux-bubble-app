@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>3D BUBBLEs</title>
+		<style>
+			 body {
+			 	background-color: black;
+/***
+			 	background-image: radial-gradient(white 1%, black 80%, black);
+			 	***/
+		        margin: 0px;
+		    }
+		</style>
+	</head>
+	<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r67/three.min.js"></script>
+		<script>
+			const scene = new THREE.Scene();
+			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			const spheres = [];
+			const bubbles = [];
+			const windowW = window.screen.width;
+			const windowH = window.screen.height;
+			var StartPos = 0;
+
+			const renderer = new THREE.WebGLRenderer({alpha:true});
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+			
+			const lsphere = new THREE.SphereGeometry( 0.5, 16, 8 );
+			light1 = new THREE.SpotLight( 0xffffff, 1000000000, 0 );
+			light1.add( new THREE.Mesh( lsphere, new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
+			light1.visible = true;
+			light1.position.z = 0;
+			scene.add( light1 );
+
+			setInterval(MoveCamera, 50);
+			
+			for (var i=0;i<50;i++)
+				CreateBubbles();
+			//(animate, 1000);
+			animate();
+			
+			function CreateBubbles() {
+				var bubble = {
+						//x: (Math.random() - 0.5)*windowW/2,
+						//y: (Math.random() - 0.5)*windowH/2,
+						//applitude: Math.random(),
+						//frequency: Math.random() * 0.01 + 0.01,
+						speedX: (Math.random() - 0.5)*0.5,
+						speedY: (Math.random() - 0.5)*0.5,
+						speedZ: (Math.random() - 0.5)*0.5,
+						//radiusChange: 0,
+						radius: Math.random()*2+1,
+						//color: bubbleColor[Math.floor(Math.random()*bubbleColor.length)],
+						color: Math.random() * 25 + 175,
+						isSpeedChanged:0,
+						//lightness: Math.random() * 10 + 65,
+						//apcChange: 0.01,
+						//apcChangeCnt: 1000,
+						//isClicked: 0,
+						//apc: 0
+					};
+				const geometry = new THREE.SphereGeometry(bubble.radius,30,30);
+				const material = new THREE.MeshLambertMaterial( {color: 0xffffff} );
+				var sphere = new THREE.Mesh( geometry, material );
+				sphere.position.x = (Math.random() - 0.5)*100;
+				sphere.position.y = (Math.random() - 0.5)*100;
+				sphere.position.z = (Math.random() - 0)*50;
+				StartPos -=0;
+				sphere.position.z = StartPos;
+				scene.add( sphere );
+				spheres.push(sphere);
+				bubbles.push(bubble);
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+				//const timer = 0.0001 * Date.now();
+				for ( let i = 0; i < spheres.length; i ++ ) {
+
+					const sphere = spheres[ i ];
+					const bubble = bubbles[ i ];
+					/***
+					if (0 == bubble.isSpeedChanged && (sphere.position.x*sphere.position.x+sphere.position.y*sphere.position.y>10)) {
+						bubble.speedX = bubble.speedX/2;
+						bubble.speedY = bubble.speedY/2;
+						bubble.isSpeedChanged = 1;
+					}
+					***/
+					sphere.position.x += 0;
+					sphere.position.y += 0;
+					
+					sphere.rotation.x += 0.01;
+					sphere.rotation.y += 0.01;
+
+				}
+				//light1.position.x += Math.sin(0.001);
+				//light1.position.y += Math.cos(0.001);
+				//light1.position.z += 0.1;
+				//camera.position.z -= 0.1;
+				renderer.render( scene, camera );
+			};
+
+			function MoveCamera() {
+				camera.position.z = StartPos+50;
+			}
+		</script>
+	</body>
+</html>

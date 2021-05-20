@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Texture</title>
+		<style>
+			body {
+				background-color: black;
+				margin: 0;
+			}
+			canvas {
+				width: 100%;
+				height: 100%
+			}
+		</style>
+	</head>
+	<body>
+		<script src="../../lib/three.js"></script>
+		<script>
+			const scene = new THREE.Scene();
+			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+			const renderer = new THREE.WebGLRenderer({alpha:true});
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+			
+			const LightSphere = new THREE.SphereGeometry( 0.5, 16, 8 );
+			PointLight = new THREE.PointLight( 0xffffff, 1000000000, 0 );
+			PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0x0 } ) ) );
+			PointLight.visible = true;
+			PointLight.position.z = -100;
+			scene.add( PointLight );
+
+			var bubbles = [];
+
+			var raycaster = new THREE.Raycaster();
+			var mouse = new THREE.Vector2();
+
+			CreateBubble();
+			animate();
+
+			window.addEventListener('click', onMouseClick, false);
+
+			function onMouseClick(event) {
+				//通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
+
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+				// 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+				raycaster.setFromCamera(mouse, camera);
+
+				// 获取raycaster直线和所有模型相交的数组集合
+				var intersects = raycaster.intersectObjects(scene.children);
+
+				console.log(intersects);
+
+				//将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
+				for (var i = 0; i < intersects.length; i++) {
+					//intersects[i].object.material.bumpMap=0;
+					var obj = intersects[i].object;
+					var tmpPosX = obj.position.x;
+					var tmpPosY = obj.position.y;
+					var tmpPosZ = obj.position.z;
+					scene.remove(obj);
+					//console.log(obj);
+					var res = new THREE.TextureLoader().load("../../tex/tex2.png", res=>{
+						var NewMaterial = new THREE.MeshBasicMaterial( {color:0xffffff} );
+						NewMaterial.map = res;
+						obj = new THREE.Mesh(obj.geometry, NewMaterial);
+						//console.log(tmpPos);
+						obj.position.x = tmpPosX;
+						obj.position.y = tmpPosY;
+						obj.position.z = tmpPosZ;
+						console.log(obj.position);
+						bubbles.pop();
+						bubbles.push( obj );
+						scene.add( obj );
+					});
+				}
+
+			}
+
+			function CreateBubble() {
+				var geometry = new THREE.SphereGeometry(1,30,30);
+				var res = new THREE.TextureLoader().load("../../tex/tex1.jpg", res=>{
+				var material = new THREE.MeshPhongMaterial( {color:0xffffff} );
+				//material.map = res;
+				material.bumpMap = res;
+				material.bumpScale = 0.5;
+				bubble = new THREE.Mesh( geometry, material );
+				scene.add( bubble );
+
+				bubble.position.x = 2;
+				bubble.position.y = 0;
+
+				bubbles.push(bubble);
+
+				camera.position.z = 5;});
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+
+				for ( let i = 0; i < bubbles.length; i ++ ) {
+
+					const bubble = bubbles[ i ];
+					bubble.rotation.x += 0.01;
+					bubble.rotation.y += 0.01;
+					bubble.rotation.z += 0.01;
+					}
+
+				renderer.render( scene, camera );
+			};
+
+		</script>
+	</body>
+</html>
