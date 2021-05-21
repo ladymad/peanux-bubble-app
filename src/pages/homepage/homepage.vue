@@ -6,22 +6,23 @@
 
 <script lang="ts">
 import Vue from "vue";
-import * as THREE from "three";
+import { Component, Emit, Inject, Model, Prop, Provide, Watch } from 'vue-property-decorator'
 
-export default Vue.extend({
-  data() {
-    return {};
-  },
-  onLoad() {},
+@Component
+export default class PageThree extends Vue {
+  // 初始化数据
+  private bubble:Array<any> = [];
 
-  mounted() {},
+  // 声明周期钩子
+  mounted() {
+  }
 
-  methods: {
-    init() {
+  // 计算属性
 
-    },
-  },
-});
+
+  // 方法
+
+}
 </script>
 
 <style>

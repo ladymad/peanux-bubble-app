@@ -14,6 +14,31 @@ module.exports = {
     module: {
         loaders: [
             { test: /\.tsx?$/, loader: "awesome-typescript-loader" },
+        ],
+        rules: [
+            {
+                test: /\.(js|vue)$/,
+                loader: 'eslint-loader',
+                enforce: 'pre',
+                include: [resolve('src'), resolve('test')],
+                options: {
+                    formatter: require('eslint-friendly-formatter')
+                }
+            },
+            {
+                test: /\.ts$/,
+                exclude: /node_modules/,
+                enforce: 'pre',
+                loader: 'tslint-loader'
+            },
+            {
+                test: /\.tsx?$/,
+                loader: 'ts-loader',
+                exclude: /node_modules/,
+                options: {
+                    appendTsSuffixTo: [/\.vue$/],
+                }
+            },
         ]
     },
     //调试服务
@@ -34,3 +59,7 @@ module.exports = {
 function __dirname(__dirname: any, arg1: string) {
     throw new Error("Function not implemented.");
 }
+function resolve(arg0: string) {
+    throw new Error("Function not implemented.");
+}
+

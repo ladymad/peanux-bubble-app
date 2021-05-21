@@ -5,4 +5,4 @@ Vue.config.productionTip = false
 
 new App().$mount()
 
-import * as THREE from "three";
+// import * as THREE from "three";
