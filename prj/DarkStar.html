@@ -27,7 +27,7 @@
 			var StartPos = 0;
 			var DisCamera2Start = 200;
 			var DisLight2Start = 70;
-			var rate = 1;
+			var rate = 10;
 			var MoveCameraSpeed = 0.2*rate;
 			var MoveBubbleSpeedMax = 0.4*rate;
 			var BubbleRotateSpeed = 0.003*rate;
@@ -84,54 +84,43 @@
 				let obj=intersects[0].object;
 				// for (var i = 0; i < intersects.length; i++) {					
 				// 	var obj = intersects[i].object;
-					if (1==obj.bubbleParam.isClicked) {
-						// continue;
-						return;
-					}
-					obj.bubbleParam.isClicked = 1;
-					var tmpPosX = obj.position.x;
-					var tmpPosY = obj.position.y;
-					var tmpPosZ = obj.position.z;
-					var tmpRotX = obj.rotation.x;
-					var tmpRotY = obj.rotation.y;
-					var tmpRotZ = obj.rotation.z;
-					var tmpBubbleParam = obj.bubbleParam;
-					tmpBubbleParam.speedX = tmpBubbleParam.speedX/10;
-					tmpBubbleParam.speedY = tmpBubbleParam.speedY/10;
-					scene.remove( obj );
-
-					//console.log(obj.position);
-					var res = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
-						var NewMaterial = new THREE.MeshBasicMaterial( {color:0x00ffff} );
-						//NewMaterial.map = res;
-						NewMaterial.transparent = true;
-						NewMaterial.opacity = 0.5;
-						var NewObj = new THREE.Mesh( obj.geometry, NewMaterial );
-						//console.log(tmpPos);
-						NewObj.position.x = tmpPosX;
-						NewObj.position.y = tmpPosY;
-						NewObj.position.z = tmpPosZ;
-						NewObj.rotation.x = tmpRotX;
-						NewObj.rotation.y = tmpRotY;
-						NewObj.rotation.y = tmpRotZ;
-						NewObj.bubbleParam = tmpBubbleParam;
-						scene.remove( bubbleGlow );
-						bubbleGlow = NewObj;
-						//console.log(NewObj.position);
-						//bubbles.push( NewObj );
-						scene.add( bubbleGlow );
-					});
-<<<<<<< Updated upstream
-				// }
-=======
-<<<<<<< HEAD
-					break;
+				if (1==obj.bubbleParam.isClicked) {
+					// continue;
+					return;
 				}
-=======
-				// }
->>>>>>> ff00de8dfdcf0975fb44c01ac8d905c27a2a656c
->>>>>>> Stashed changes
+				obj.bubbleParam.isClicked = 1;
+				var tmpPosX = obj.position.x;
+				var tmpPosY = obj.position.y;
+				var tmpPosZ = obj.position.z;
+				var tmpRotX = obj.rotation.x;
+				var tmpRotY = obj.rotation.y;
+				var tmpRotZ = obj.rotation.z;
+				var tmpBubbleParam = obj.bubbleParam;
+				tmpBubbleParam.speedX = tmpBubbleParam.speedX/10;
+				tmpBubbleParam.speedY = tmpBubbleParam.speedY/10;
+				scene.remove( obj );
 
+				//console.log(obj.position);
+				var res = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
+					var NewMaterial = new THREE.MeshBasicMaterial( {color:0x00ffff} );
+					//NewMaterial.map = res;
+					NewMaterial.transparent = true;
+					NewMaterial.opacity = 0.5;
+					var NewObj = new THREE.Mesh( obj.geometry, NewMaterial );
+					//console.log(tmpPos);
+					NewObj.position.x = tmpPosX;
+					NewObj.position.y = tmpPosY;
+					NewObj.position.z = tmpPosZ;
+					NewObj.rotation.x = tmpRotX;
+					NewObj.rotation.y = tmpRotY;
+					NewObj.rotation.y = tmpRotZ;
+					NewObj.bubbleParam = tmpBubbleParam;
+					scene.remove( bubbleGlow );
+					bubbleGlow = NewObj;
+					//console.log(NewObj.position);
+					//bubbles.push( NewObj );
+					scene.add( bubbleGlow );
+				});
 			}
 			
 			function CreateBubbles() {
