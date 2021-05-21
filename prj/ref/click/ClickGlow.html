@@ -35,6 +35,8 @@
 
 			var bubbles = [];
 			var bubbles_glow = [];
+			var bubbles_aero = [];
+			var aero_radius = 1.1;
 
 			var raycaster = new THREE.Raycaster();
 			var mouse = new THREE.Vector2();
@@ -65,7 +67,7 @@
 					},
 					glowColor: {
 						type: "c",
-						value: new THREE.Color(0x0f0f0f )
+						value: new THREE.Color(0x0fffff )
 					}
 				},
 				vertexShader: vertexShader,
@@ -97,7 +99,7 @@
 				uniforms: {
 					coeficient: {
 						type: "f",
-						value: 0.2
+						value: 0.5
 					},
 					power: {
 						type: "f",
@@ -105,7 +107,7 @@
 					},
 					glowColor: {
 						type: "c",
-						value: new THREE.Color(0x0f0f0f)
+						value: new THREE.Color(0x0fffff)
 					}
 				},
 				vertexShader: vertexShader,
@@ -148,7 +150,7 @@
 					fragmentShader: THREE.AeroSphere.fragmentShader,
 					blending: THREE.NormalBlending,
 					transparent: true,
-					opacity: 0.01,
+					opacity: 0,
 					depthWrite:false
 				});
 				var material2 = new THREE.ShaderMaterial({
@@ -159,17 +161,11 @@
 					transparent: false,
 				});
 
-				var sphere = new THREE.SphereBufferGeometry(1.2, 32, 32);
+				var sphere = new THREE.SphereBufferGeometry(aero_radius, 32, 32);
 				var mesh = new THREE.Mesh(sphere, material1);
 				mesh.position.x=2;mesh.position.y=0;mesh.position.z=0;
 				scene.add(mesh);
-				bubbles_glow.push(mesh);
-
-				var sphere2 = new THREE.SphereBufferGeometry(1.1, 32, 32);
-				var mesh2 = new THREE.Mesh(sphere2, material1);
-				mesh2.position.x=2;mesh2.position.y=0;mesh2.position.z=0;
-				scene.add(mesh2);
-				bubbles_glow.push(mesh2);
+				bubbles_aero.push(mesh);
 
 				var sphere3 = new THREE.SphereBufferGeometry(1, 32, 32);
 				var mesh3 = new THREE.Mesh(sphere3, material2);
@@ -238,12 +234,34 @@
 
 				for ( let i = 0; i < bubbles_glow.length; i ++ ) {
 
-					const bubble_glow = bubbles_glow[ i ];
-					bubble_glow.rotation.x += 0.01;
-					bubble_glow.rotation.y += 0.01;
-					bubble_glow.rotation.z += 0.01;
+					const glow = bubbles_glow[ i ];
+					glow.rotation.x += 0.01;
+					glow.rotation.y += 0.01;
+					glow.rotation.z += 0.01;
 				}
+				
+				if (bubbles_aero.length>0 && aero_radius<=1.2){
+					const aero = bubbles_aero[ 0 ];
 
+					//scene.remove(aero);
+
+					var material1 = new THREE.ShaderMaterial({
+						uniforms: THREE.AeroSphere.uniforms,
+						vertexShader: THREE.AeroSphere.vertexShader,
+						fragmentShader: THREE.AeroSphere.fragmentShader,
+						blending: THREE.NormalBlending,
+						transparent: true,
+						opacity: 1,
+						depthWrite:true
+					});
+
+					var sphere = new THREE.SphereBufferGeometry(aero_radius, 32, 32);
+					var mesh = new THREE.Mesh(sphere, material1);
+					mesh.position.x=2;mesh.position.y=0;mesh.position.z=0;
+					//scene.add(mesh);
+					bubbles_aero.push(mesh);
+					//aero_radius += 0.005;
+				}
 				renderer.render( scene, camera );
 			};
 

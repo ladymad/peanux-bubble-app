@@ -7,7 +7,7 @@
 			 body {
 				width: 100;
 			 	background-color: black;
-			 	background-image: radial-gradient(white 10%, white 20%, black);
+			 	background-image: radial-gradient(white 5%, black 90%);
 		        margin: 0px;
 		    }
 		</style>
@@ -23,14 +23,15 @@
 
 			// 全局参数设置
 			const bubbles = [];
+			var bubbleGlow;
 			var StartPos = 0;
 			var DisCamera2Start = 200;
 			var DisLight2Start = 70;
-			var rate = 2;
-			var MoveCameraSpeed = 0.2/rate;
-			var MoveBubbleSpeedMax = 0.3/rate;
-			var BubbleRotateSpeed = 0.007/rate;
-			var CreateBubbleFrame = 50*rate;
+			var rate = 1;
+			var MoveCameraSpeed = 0.2*rate;
+			var MoveBubbleSpeedMax = 0.4*rate;
+			var BubbleRotateSpeed = 0.003*rate;
+			var CreateBubbleFrame = 70/rate;
 
 			const scene = new THREE.Scene();
 			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -41,7 +42,7 @@
 			
 			// 设置点光源
 			//const LightSphere = new THREE.SphereGeometry( 10, 16, 8 );
-			PointLight = new THREE.PointLight( 0xffffff, 1000000, 0 );
+			PointLight = new THREE.PointLight( 0xffffff, 100, 0 );
 			//PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
 			PointLight.visible = true;
 			PointLight.position.z = StartPos+DisLight2Start;
@@ -51,13 +52,16 @@
 			var raycaster = new THREE.Raycaster();
 			var mouse = new THREE.Vector2();
 
-			// 生成气泡
-			setInterval(CreateBubbles,CreateBubbleFrame);
-
-			// 运动动画
-			animate();
-
 			window.addEventListener('click', onMouseClick, false);
+
+			Start();
+
+			function Start() {
+				// 生成气泡
+				setInterval(CreateBubbles,CreateBubbleFrame);
+				// 运动动画
+				animate();
+			}
 
 			function onMouseClick(event) {
 				//通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
@@ -98,7 +102,7 @@
 
 					//console.log(obj.position);
 					var res = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
-						var NewMaterial = new THREE.MeshBasicMaterial( {color:0x00ff00} );
+						var NewMaterial = new THREE.MeshBasicMaterial( {color:0x00ffff} );
 						//NewMaterial.map = res;
 						NewMaterial.transparent = true;
 						NewMaterial.opacity = 0.5;
@@ -111,11 +115,22 @@
 						NewObj.rotation.y = tmpRotY;
 						NewObj.rotation.y = tmpRotZ;
 						NewObj.bubbleParam = tmpBubbleParam;
+						scene.remove( bubbleGlow );
+						bubbleGlow = NewObj;
 						//console.log(NewObj.position);
-						bubbles.push( NewObj );
-						scene.add( NewObj );
+						//bubbles.push( NewObj );
+						scene.add( bubbleGlow );
 					});
+<<<<<<< Updated upstream
 				// }
+=======
+<<<<<<< HEAD
+					break;
+				}
+=======
+				// }
+>>>>>>> ff00de8dfdcf0975fb44c01ac8d905c27a2a656c
+>>>>>>> Stashed changes
 
 			}
 			
@@ -128,10 +143,11 @@
 						speedX: (Math.random() - 0.5)*MoveBubbleSpeedMax,
 						speedY: (Math.random() - 0.5)*MoveBubbleSpeedMax,
 						speedZ: (Math.random() - 0.5)*MoveCameraSpeed*1.5,
+						RotSpeed: Math.random()*BubbleRotateSpeed+BubbleRotateSpeed,
 						//speedZ: (Math.random() - 0.5)*0.5,
 						//radiusChange: 0,
-						MaxRadius: Math.random()*4+3,
-						InitRadius: Math.random()*3+2,
+						//MaxRadius: Math.random()*4+3,
+						InitRadius: Math.random()*5+2,
 						isClicked: 0,
 						//color: bubbleColor[Math.floor(Math.random()*bubbleColor.length)],
 						//color: Math.random() * 25 + 175,
@@ -156,8 +172,7 @@
 
 				bubble.position.x = 0;
 				bubble.position.y = 0;
-
-				bubble.position.z = StartPos;
+				bubble.position.z = StartPos+(Math.random()-0.5)*70;
 				bubble.bubbleParam = bubbleParam;
 				//PointLight.position.z -= 0.2;
 				scene.add(bubble);
@@ -167,7 +182,7 @@
 			function animate() {
 				requestAnimationFrame( animate );
 
-				if (bubbles.length>500) {
+				if (bubbles.length>1000) {
 					bubbles.shift();
 				}
 
@@ -181,17 +196,18 @@
 
 					bubble.position.x += bubble.bubbleParam.speedX;
 					bubble.position.y += bubble.bubbleParam.speedY;
-					bubble.position.z += bubble.bubbleParam.speedZ;
+					bubble.position.z += bubble.bubbleParam.speedZ+MoveCameraSpeed;
 					
-					bubble.rotation.x += BubbleRotateSpeed;
-					bubble.rotation.y += BubbleRotateSpeed;
-					bubble.rotation.z += BubbleRotateSpeed;
+					bubble.rotation.x += bubble.bubbleParam.RotSpeed;
+					bubble.rotation.y += bubble.bubbleParam.RotSpeed;
+					bubble.rotation.z += bubble.bubbleParam.RotSpeed;
 
 					//console.log(bubble.position.z);
 					//console.log(camera.position.z);
 
 					if (bubble.position.z>camera.position.z) {
 						scene.remove(bubble);
+						//bubbles.remove(bubble);
 					}
 				}
 				MoveCamera();
@@ -199,7 +215,7 @@
 			};
 
 			function MoveCamera() {
-				StartPos -= MoveCameraSpeed;
+				//StartPos -= MoveCameraSpeed;
 				camera.position.z = StartPos+DisCamera2Start;
 				PointLight.position.z = StartPos+DisLight2Start;
 			}
