@@ -71,13 +71,18 @@
 				// 获取raycaster直线和所有模型相交的数组集合
 				var intersects = raycaster.intersectObjects(scene.children);
 
-				//console.log(intersects);
+				// console.log('集合',intersects);
 
 				//将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
-				for (var i = 0; i < intersects.length; i++) {					
-					var obj = intersects[i].object;
+				if(!intersects.length){
+					return;
+				}
+				let obj=intersects[0].object;
+				// for (var i = 0; i < intersects.length; i++) {					
+				// 	var obj = intersects[i].object;
 					if (1==obj.bubbleParam.isClicked) {
-						continue;
+						// continue;
+						return;
 					}
 					obj.bubbleParam.isClicked = 1;
 					var tmpPosX = obj.position.x;
@@ -110,7 +115,7 @@
 						bubbles.push( NewObj );
 						scene.add( NewObj );
 					});
-				}
+				// }
 
 			}
 			
