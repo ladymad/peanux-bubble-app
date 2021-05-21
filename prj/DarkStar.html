@@ -15,6 +15,7 @@
 	<body>
 		<script src="./lib/three.js"></script>
 		<script>
+			// 窗口
 			const windowW = window.innerWidth;
 			const windowH = window.innerHeight;
 			//window.moveTo(0,0);
@@ -33,16 +34,19 @@
 			var BubbleRotateSpeed = 0.003*rate;
 			var CreateBubbleFrame = 70/rate;
 
+			// 设置场景和摄像机
 			const scene = new THREE.Scene();
 			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			camera.position.z = StartPos+DisCamera2Start;
 
+			// 设置渲染器
 			const renderer = new THREE.WebGLRenderer({alpha:true});
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 			
 			// 设置点光源
 			//const LightSphere = new THREE.SphereGeometry( 10, 16, 8 );
-			PointLight = new THREE.PointLight( 0xffffff, 100, 0 );
+			var PointLight = new THREE.PointLight( 0xffffff, 100, 0 );
 			//PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
 			PointLight.visible = true;
 			PointLight.position.z = StartPos+DisLight2Start;
@@ -51,11 +55,14 @@
 			// 鼠标点击
 			var raycaster = new THREE.Raycaster();
 			var mouse = new THREE.Vector2();
-
 			window.addEventListener('click', onMouseClick, false);
 
+			// 开始
 			Start();
 
+			/*** 函数 ***/
+
+			// 开始
 			function Start() {
 				// 生成气泡
 				setInterval(CreateBubbles,CreateBubbleFrame);
@@ -63,6 +70,7 @@
 				animate();
 			}
 
+			// 单击事件
 			function onMouseClick(event) {
 				//通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
 				
@@ -82,10 +90,7 @@
 					return;
 				}
 				let obj=intersects[0].object;
-				// for (var i = 0; i < intersects.length; i++) {					
-				// 	var obj = intersects[i].object;
 				if (1==obj.bubbleParam.isClicked) {
-					// continue;
 					return;
 				}
 				obj.bubbleParam.isClicked = 1;
@@ -103,11 +108,9 @@
 				//console.log(obj.position);
 				var res = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
 					var NewMaterial = new THREE.MeshBasicMaterial( {color:0x00ffff} );
-					//NewMaterial.map = res;
 					NewMaterial.transparent = true;
 					NewMaterial.opacity = 0.5;
 					var NewObj = new THREE.Mesh( obj.geometry, NewMaterial );
-					//console.log(tmpPos);
 					NewObj.position.x = tmpPosX;
 					NewObj.position.y = tmpPosY;
 					NewObj.position.z = tmpPosZ;
@@ -118,11 +121,11 @@
 					scene.remove( bubbleGlow );
 					bubbleGlow = NewObj;
 					//console.log(NewObj.position);
-					//bubbles.push( NewObj );
 					scene.add( bubbleGlow );
 				});
 			}
 			
+			// 生成气泡
 			function CreateBubbles() {
 				var bubbleParam = {
 						//x: (Math.random() - 0.5)*windowW/2,
@@ -168,6 +171,7 @@
 				bubbles.push(bubble);});
 			}
 
+			// 生成动画
 			function animate() {
 				requestAnimationFrame( animate );
 
@@ -191,23 +195,12 @@
 					bubble.rotation.y += bubble.bubbleParam.RotSpeed;
 					bubble.rotation.z += bubble.bubbleParam.RotSpeed;
 
-					//console.log(bubble.position.z);
-					//console.log(camera.position.z);
-
 					if (bubble.position.z>camera.position.z) {
 						scene.remove(bubble);
-						//bubbles.remove(bubble);
 					}
 				}
-				MoveCamera();
 				renderer.render( scene, camera );
 			};
-
-			function MoveCamera() {
-				//StartPos -= MoveCameraSpeed;
-				camera.position.z = StartPos+DisCamera2Start;
-				PointLight.position.z = StartPos+DisLight2Start;
-			}
 		</script>
 	</body>
 </html>
