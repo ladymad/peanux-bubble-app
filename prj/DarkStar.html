@@ -35,6 +35,7 @@
 			var MoveBubbleSpeedMax = 0.4*rate;
 			var BubbleRotateSpeed = 0.003*rate;
 			var CreateBubbleFrame = 70/rate;
+			var AudioPlayState = 0;
 
 			var vertexShader = [
 				'varying vec3	vVertexWorldPosition;',
@@ -198,15 +199,7 @@
 				}
 				obj.bubbleParam.isClicked = 1;
 				var tmpPos = obj.position;
-				//var tmpPosX = obj.position.x;
-				//var tmpPosY = obj.position.y;
-				//var tmpPosZ = obj.position.z;
-				//var tmpRotX = obj.rotation.x;
-				//var tmpRotY = obj.rotation.y;
-				//var tmpRotZ = obj.rotation.z;
 				var tmpBubbleParam = obj.bubbleParam;
-				//tmpBubbleParam.speedX = tmpBubbleParam.speedX/10;
-				//tmpBubbleParam.speedY = tmpBubbleParam.speedY/10;
 				scene.remove( obj );
 
 				//console.log(obj.position);
@@ -214,25 +207,6 @@
 				scene.remove(bubble_aero);
 
 				CreateBubbleGlow(tmpPos,tmpBubbleParam);
-				/***
-				var res = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
-					var NewMaterial = new THREE.MeshBasicMaterial( {color:0x00ffff} );
-					NewMaterial.transparent = true;
-					NewMaterial.opacity = 0.5;
-					var NewObj = new THREE.Mesh( obj.geometry, NewMaterial );
-					NewObj.position.x = tmpPosX;
-					NewObj.position.y = tmpPosY;
-					NewObj.position.z = tmpPosZ;
-					NewObj.rotation.x = tmpRotX;
-					NewObj.rotation.y = tmpRotY;
-					NewObj.rotation.y = tmpRotZ;
-					NewObj.bubbleParam = tmpBubbleParam;
-					scene.remove( bubbleGlow );
-					bubbleGlow = NewObj;
-					//console.log(NewObj.position);
-					scene.add( bubbleGlow );
-				});
-				***/
 			}
 			
 			// 生成气泡
@@ -281,7 +255,7 @@
 
 			//球体 辉光 大气层
 			function CreateBubbleGlow(Pos,Params) {    
-				var material1 = new THREE.ShaderMaterial({
+				var material_aero = new THREE.ShaderMaterial({
 					uniforms: THREE.AeroSphere.uniforms,
 					vertexShader: THREE.AeroSphere.vertexShader,
 					fragmentShader: THREE.AeroSphere.fragmentShader,
@@ -290,7 +264,7 @@
 					opacity: 0,
 					depthWrite:false
 				});
-				var material2 = new THREE.ShaderMaterial({
+				var material_glow = new THREE.ShaderMaterial({
 					uniforms: THREE.GlowSphere.uniforms,
 					vertexShader: THREE.GlowSphere.vertexShader,
 					fragmentShader: THREE.GlowSphere.fragmentShader,
@@ -298,19 +272,23 @@
 					transparent: false,
 				});
 
-				var sphere = new THREE.SphereBufferGeometry(Params.InitRadius*1.2, 32, 32);
-				bubble_aero = new THREE.Mesh(sphere, material1);
+				var sphere_aero = new THREE.SphereBufferGeometry(Params.InitRadius*1.2, 32, 32);
+				bubble_aero = new THREE.Mesh(sphere_aero, material_aero);
 				bubble_aero.bubbleParam = Params;
 				bubble_aero.radius = Params.InitRadius*1.2;
 				bubble_aero.bubbleParam.radiusChange = Params.InitRadius*0.2/100;
 				bubble_aero.radiusChange = bubble_aero.bubbleParam.radiusChange;
-				bubble_aero.position.x=Pos.x;bubble_aero.position.y=Pos.y;bubble_aero.position.z=Pos.z;
+				bubble_aero.position.x=Pos.x;
+				bubble_aero.position.y=Pos.y;
+				bubble_aero.position.z=Pos.z;
 				scene.add(bubble_aero);
 
-				var sphere3 = new THREE.SphereBufferGeometry(Params.InitRadius, 32, 32);
-				bubble_glow = new THREE.Mesh(sphere3, material2);
+				var sphere_glow = new THREE.SphereBufferGeometry(Params.InitRadius, 32, 32);
+				bubble_glow = new THREE.Mesh(sphere_glow, material_glow);
 				bubble_glow.bubbleParam = Params;
-				bubble_glow.position.x=Pos.x;bubble_glow.position.y=Pos.y;bubble_glow.position.z=Pos.z;
+				bubble_glow.position.x=Pos.x;
+				bubble_glow.position.y=Pos.y;
+				bubble_glow.position.z=Pos.z;
 				scene.add(bubble_glow);
 			}
 
@@ -321,7 +299,7 @@
 				if (bubbles.length>1000) {
 					bubbles.shift();
 				}
-
+				// 球体运动
 				for ( let i = 0; i < bubbles.length; i ++ ) {
 
 					const bubble = bubbles[ i ];
@@ -343,6 +321,7 @@
 					}
 				}
 
+				// 大气层运动
 				if (bubble_aero!=null) {
 					console.log(bubble_aero.radius);
 					if (bubble_aero.radius>bubble_aero.bubbleParam.InitRadius*1.2) {
@@ -354,7 +333,7 @@
 					}
 					scene.remove(bubble_aero);
 
-					var material1 = new THREE.ShaderMaterial({
+					var material_aero = new THREE.ShaderMaterial({
 						uniforms: THREE.AeroSphere.uniforms,
 						vertexShader: THREE.AeroSphere.vertexShader,
 						fragmentShader: THREE.AeroSphere.fragmentShader,
@@ -365,16 +344,16 @@
 					});
 
 					//console.log(material1);
-					var sphere = new THREE.SphereBufferGeometry(bubble_aero.radius + bubble_aero.radiusChange, 32, 32);
-					var mesh = new THREE.Mesh(sphere, material1);
-					mesh.position.x=bubble_aero.position.x;
-					mesh.position.y=bubble_aero.position.y;
-					mesh.position.z=bubble_aero.position.z;
-					mesh.radius = bubble_aero.radius + bubble_aero.radiusChange;
-					mesh.radiusChange = bubble_aero.radiusChange;
-					mesh.bubbleParam = bubble_aero.bubbleParam;
+					var sphere_aero = new THREE.SphereBufferGeometry(bubble_aero.radius + bubble_aero.radiusChange, 32, 32);
+					var mesh_aero = new THREE.Mesh(sphere_aero, material_aero);
+					mesh_aero.position.x=bubble_aero.position.x;
+					mesh_aero.position.y=bubble_aero.position.y;
+					mesh_aero.position.z=bubble_aero.position.z;
+					mesh_aero.radius = bubble_aero.radius + bubble_aero.radiusChange;
+					mesh_aero.radiusChange = bubble_aero.radiusChange;
+					mesh_aero.bubbleParam = bubble_aero.bubbleParam;
 					//bubbles_aero.push(mesh);
-					bubble_aero = mesh;
+					bubble_aero = mesh_aero;
 					scene.add(bubble_aero);
 				}
 				
