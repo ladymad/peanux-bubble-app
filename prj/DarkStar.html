@@ -24,15 +24,112 @@
 
 			// 全局参数设置
 			const bubbles = [];
-			var bubbleGlow;
+			//var bubbleGlow;
+			var bubble_glow = null;
+			var bubble_aero = null;
 			var StartPos = 0;
 			var DisCamera2Start = 200;
 			var DisLight2Start = 70;
-			var rate = 10;
+			var rate = 1;
 			var MoveCameraSpeed = 0.2*rate;
 			var MoveBubbleSpeedMax = 0.4*rate;
 			var BubbleRotateSpeed = 0.003*rate;
 			var CreateBubbleFrame = 70/rate;
+
+			var vertexShader = [
+				'varying vec3	vVertexWorldPosition;',
+				'varying vec3	vVertexNormal;',
+				'varying vec4	vFragColor;',
+				'void main(){',
+				'	vVertexNormal	= normalize(normalMatrix * normal);',//将法线转换到视图坐标系中
+				'	vVertexWorldPosition	= (modelMatrix * vec4(position, 1.0)).xyz;',//将顶点转换到世界坐标系中
+				'	// set gl_Position',
+				'	gl_Position	= projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+				'}'
+
+			].join('\n');
+
+			//大气层效果
+			THREE.AeroSphere = {
+				uniforms: {
+					coeficient: {
+						type: "f",
+						value: 1.0
+					},
+					power: {
+						type: "f",
+						value: 2
+					},
+					glowColor: {
+						type: "c",
+						value: new THREE.Color(0xffffff )
+					}
+				},
+				vertexShader: vertexShader,
+				fragmentShader: [
+					'uniform vec3	glowColor;',
+					'uniform float	coeficient;',
+					'uniform float	power;',
+
+					'varying vec3	vVertexNormal;',
+					'varying vec3	vVertexWorldPosition;',
+
+					'varying vec4	vFragColor;',
+
+					'void main(){',
+					'	vec3 worldCameraToVertex= vVertexWorldPosition - cameraPosition;',	//世界坐标系中从相机位置到顶点位置的距离
+					'	vec3 viewCameraToVertex	= (viewMatrix * vec4(worldCameraToVertex, 0.0)).xyz;',//视图坐标系中从相机位置到顶点位置的距离
+					'	viewCameraToVertex	= normalize(viewCameraToVertex);',//规一化
+					'	float intensity		= pow(coeficient + dot(vVertexNormal, viewCameraToVertex), power);',
+					'	gl_FragColor		= vec4(glowColor, intensity);',
+					'}'//vVertexNormal视图坐标系中点的法向量
+					//viewCameraToVertex视图坐标系中点到摄像机的距离向量
+					//dot点乘得到它们的夹角的cos值
+					//从中心向外面角度越来越小（从钝角到锐角）从cos函数也可以知道这个值由负变正，不透明度最终从低到高
+				].join('\n')
+			}
+
+			//辉光效果Glow
+			THREE.GlowSphere = {
+				uniforms: {
+					coeficient: {
+						type: "f",
+						value: 1
+					},
+					power: {
+						type: "f",
+						value: 1
+					},
+					glowColor: {
+						type: "c",
+						value: new THREE.Color(0x0fffff)
+					}
+				},
+				vertexShader: vertexShader,
+				fragmentShader: [
+					'uniform vec3	glowColor;',
+					'uniform float	coeficient;',
+					'uniform float	power;',
+
+					'varying vec3	vVertexNormal;',
+					'varying vec3	vVertexWorldPosition;',
+
+					'varying vec4	vFragColor;',
+
+					'void main(){',
+					'	vec3 worldVertexToCamera= cameraPosition - vVertexWorldPosition;',	//世界坐标系中顶点位置到相机位置到的距离
+					'	vec3 viewCameraToVertex	= (viewMatrix * vec4(worldVertexToCamera, 0.0)).xyz;',//视图坐标系中从相机位置到顶点位置的距离
+					'	viewCameraToVertex	= normalize(viewCameraToVertex);',//规一化
+					'	float intensity		= coeficient + dot(vVertexNormal, viewCameraToVertex);',
+					'	if(intensity > 0.65){ intensity = 0.0;}',
+					'	gl_FragColor		= vec4(glowColor, intensity);',
+					'}'//vVertexNormal视图坐标系中点的法向量
+					//viewCameraToVertex视图坐标系中点到摄像机的距离向量
+					//dot点乘得到它们的夹角的cos值
+					//从中心向外面角度越来越大（从锐角到钝角）从cos函数也可以知道这个值由负变正，不透明度最终从高到低
+				].join('\n')
+			}
+
 
 			// 设置场景和摄像机
 			const scene = new THREE.Scene();
@@ -50,6 +147,12 @@
 			//PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
 			PointLight.visible = true;
 			PointLight.position.z = StartPos+DisLight2Start;
+			scene.add( PointLight );
+
+			var PointLight = new THREE.PointLight( 0xffffff, 0.3, 0 );
+			//PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
+			PointLight.visible = true;
+			PointLight.position.z = StartPos+DisCamera2Start*2;
 			scene.add( PointLight );
 
 			// 鼠标点击
@@ -94,18 +197,24 @@
 					return;
 				}
 				obj.bubbleParam.isClicked = 1;
-				var tmpPosX = obj.position.x;
-				var tmpPosY = obj.position.y;
-				var tmpPosZ = obj.position.z;
-				var tmpRotX = obj.rotation.x;
-				var tmpRotY = obj.rotation.y;
-				var tmpRotZ = obj.rotation.z;
+				var tmpPos = obj.position;
+				//var tmpPosX = obj.position.x;
+				//var tmpPosY = obj.position.y;
+				//var tmpPosZ = obj.position.z;
+				//var tmpRotX = obj.rotation.x;
+				//var tmpRotY = obj.rotation.y;
+				//var tmpRotZ = obj.rotation.z;
 				var tmpBubbleParam = obj.bubbleParam;
-				tmpBubbleParam.speedX = tmpBubbleParam.speedX/10;
-				tmpBubbleParam.speedY = tmpBubbleParam.speedY/10;
+				//tmpBubbleParam.speedX = tmpBubbleParam.speedX/10;
+				//tmpBubbleParam.speedY = tmpBubbleParam.speedY/10;
 				scene.remove( obj );
 
 				//console.log(obj.position);
+				scene.remove(bubble_glow);
+				scene.remove(bubble_aero);
+
+				CreateBubbleGlow(tmpPos,tmpBubbleParam);
+				/***
 				var res = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
 					var NewMaterial = new THREE.MeshBasicMaterial( {color:0x00ffff} );
 					NewMaterial.transparent = true;
@@ -123,6 +232,7 @@
 					//console.log(NewObj.position);
 					scene.add( bubbleGlow );
 				});
+				***/
 			}
 			
 			// 生成气泡
@@ -137,7 +247,7 @@
 						speedZ: (Math.random() - 0.5)*MoveCameraSpeed*1.5,
 						RotSpeed: Math.random()*BubbleRotateSpeed+BubbleRotateSpeed,
 						//speedZ: (Math.random() - 0.5)*0.5,
-						//radiusChange: 0,
+						radiusChange: 0,
 						//MaxRadius: Math.random()*4+3,
 						InitRadius: Math.random()*5+2,
 						isClicked: 0,
@@ -156,10 +266,8 @@
 				var texture = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
 				const material = new THREE.MeshPhongMaterial( {color:0xffffff}); 
 				material.map = res;
-				//material.transparent = true;
-				//material.opacity = 0.5;
 				material.bumpMap = res;
-				material.bumpScale = 0.9;
+				material.bumpScale = 0.7;
 				var bubble = new THREE.Mesh( geometry, material );
 
 				bubble.position.x = 0;
@@ -169,6 +277,41 @@
 				//PointLight.position.z -= 0.2;
 				scene.add(bubble);
 				bubbles.push(bubble);});
+			}
+
+			//球体 辉光 大气层
+			function CreateBubbleGlow(Pos,Params) {    
+				var material1 = new THREE.ShaderMaterial({
+					uniforms: THREE.AeroSphere.uniforms,
+					vertexShader: THREE.AeroSphere.vertexShader,
+					fragmentShader: THREE.AeroSphere.fragmentShader,
+					blending: THREE.NormalBlending,
+					transparent: true,
+					opacity: 0,
+					depthWrite:false
+				});
+				var material2 = new THREE.ShaderMaterial({
+					uniforms: THREE.GlowSphere.uniforms,
+					vertexShader: THREE.GlowSphere.vertexShader,
+					fragmentShader: THREE.GlowSphere.fragmentShader,
+					blending: THREE.NormalBlending,
+					transparent: false,
+				});
+
+				var sphere = new THREE.SphereBufferGeometry(Params.InitRadius*1.2, 32, 32);
+				bubble_aero = new THREE.Mesh(sphere, material1);
+				bubble_aero.bubbleParam = Params;
+				bubble_aero.radius = Params.InitRadius*1.2;
+				bubble_aero.bubbleParam.radiusChange = Params.InitRadius*0.2/100;
+				bubble_aero.radiusChange = bubble_aero.bubbleParam.radiusChange;
+				bubble_aero.position.x=Pos.x;bubble_aero.position.y=Pos.y;bubble_aero.position.z=Pos.z;
+				scene.add(bubble_aero);
+
+				var sphere3 = new THREE.SphereBufferGeometry(Params.InitRadius, 32, 32);
+				bubble_glow = new THREE.Mesh(sphere3, material2);
+				bubble_glow.bubbleParam = Params;
+				bubble_glow.position.x=Pos.x;bubble_glow.position.y=Pos.y;bubble_glow.position.z=Pos.z;
+				scene.add(bubble_glow);
 			}
 
 			// 生成动画
@@ -199,6 +342,42 @@
 						scene.remove(bubble);
 					}
 				}
+
+				if (bubble_aero!=null) {
+					console.log(bubble_aero.radius);
+					if (bubble_aero.radius>bubble_aero.bubbleParam.InitRadius*1.2) {
+						bubble_aero.radiusChange = - bubble_aero.bubbleParam.radiusChange;
+						//aero_opacity=1;
+					}
+					if (bubble_aero.radius<bubble_aero.bubbleParam.InitRadius*1 ) {
+						bubble_aero.radiusChange = + bubble_aero.bubbleParam.radiusChange;
+					}
+					scene.remove(bubble_aero);
+
+					var material1 = new THREE.ShaderMaterial({
+						uniforms: THREE.AeroSphere.uniforms,
+						vertexShader: THREE.AeroSphere.vertexShader,
+						fragmentShader: THREE.AeroSphere.fragmentShader,
+						blending: THREE.NormalBlending,
+						transparent: true,
+						opacity: 0,
+						depthWrite:true
+					});
+
+					//console.log(material1);
+					var sphere = new THREE.SphereBufferGeometry(bubble_aero.radius + bubble_aero.radiusChange, 32, 32);
+					var mesh = new THREE.Mesh(sphere, material1);
+					mesh.position.x=bubble_aero.position.x;
+					mesh.position.y=bubble_aero.position.y;
+					mesh.position.z=bubble_aero.position.z;
+					mesh.radius = bubble_aero.radius + bubble_aero.radiusChange;
+					mesh.radiusChange = bubble_aero.radiusChange;
+					mesh.bubbleParam = bubble_aero.bubbleParam;
+					//bubbles_aero.push(mesh);
+					bubble_aero = mesh;
+					scene.add(bubble_aero);
+				}
+				
 				renderer.render( scene, camera );
 			};
 		</script>
