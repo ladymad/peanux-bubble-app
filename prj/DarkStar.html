@@ -28,9 +28,10 @@
 			var bubble_glow = null;
 			var bubble_aero = null;
 			var StartPos = 0;
-			var DisCamera2Start = 200;
-			var DisLight2Start = 70;
-			var rate = 1;
+			var DisCamera2Start = 250;
+			var DisLight2Start = 100;
+			var DisButton2Start = 225;
+			var rate = 2;
 			var MoveCameraSpeed = 0.2*rate;
 			var MoveBubbleSpeedMax = 0.4*rate;
 			var BubbleRotateSpeed = 0.003*rate;
@@ -134,7 +135,7 @@
 
 			// 设置场景和摄像机
 			const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
 			camera.position.z = StartPos+DisCamera2Start;
 
 			// 设置渲染器
@@ -169,6 +170,7 @@
 			// 开始
 			function Start() {
 				// 生成气泡
+				CreatePlayButton();
 				setInterval(CreateBubbles,CreateBubbleFrame);
 				// 运动动画
 				animate();
@@ -209,6 +211,43 @@
 				CreateBubbleGlow(tmpPos,tmpBubbleParam);
 			}
 			
+			//
+			function CreatePlayButton() {
+				var material_aero = new THREE.ShaderMaterial({
+					uniforms: THREE.AeroSphere.uniforms,
+					vertexShader: THREE.AeroSphere.vertexShader,
+					fragmentShader: THREE.AeroSphere.fragmentShader,
+					blending: THREE.NormalBlending,
+					transparent: true,
+					opacity: 0,
+					depthWrite:true
+				});
+				//console.log(material1);
+				var sphere_aero = new THREE.SphereBufferGeometry(0.9, 60, 60);
+				var mesh_aero = new THREE.Mesh(sphere_aero, material_aero);
+				mesh_aero.position.x=0;
+				mesh_aero.position.y=-7;
+				mesh_aero.position.z=StartPos + DisButton2Start;
+				//bubbles_aero.push(mesh);
+				scene.add(mesh_aero);
+
+				sphere_aero = new THREE.SphereBufferGeometry(1, 60, 60);
+				mesh_aero = new THREE.Mesh(sphere_aero, material_aero);
+				mesh_aero.position.x=0;
+				mesh_aero.position.y=-7;
+				mesh_aero.position.z=StartPos + DisButton2Start;
+				//bubbles_aero.push(mesh);
+				scene.add(mesh_aero);
+
+				sphere_aero = new THREE.SphereBufferGeometry(1.1, 60, 60);
+				mesh_aero = new THREE.Mesh(sphere_aero, material_aero);
+				mesh_aero.position.x=0;
+				mesh_aero.position.y=-7;
+				mesh_aero.position.z=StartPos + DisButton2Start;
+				//bubbles_aero.push(mesh);
+				scene.add(mesh_aero);
+
+			}
 			// 生成气泡
 			function CreateBubbles() {
 				var bubbleParam = {
@@ -323,7 +362,7 @@
 
 				// 大气层运动
 				if (bubble_aero!=null) {
-					console.log(bubble_aero.radius);
+					//console.log(bubble_aero.radius);
 					if (bubble_aero.radius>bubble_aero.bubbleParam.InitRadius*1.2) {
 						bubble_aero.radiusChange = - bubble_aero.bubbleParam.radiusChange;
 						//aero_opacity=1;
