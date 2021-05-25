@@ -276,9 +276,9 @@
 				const geometry = new THREE.SphereGeometry(bubbleParam.InitRadius,30,30);
 				//const material = new THREE.MeshPhongMaterial();
 
-				var texture = new THREE.TextureLoader().load("./tex/tex1.jpg", res=>{
+				var texture = new THREE.TextureLoader().load("./tex/cosmos.jfif", res=>{
 				const material = new THREE.MeshPhongMaterial( {color:0xffffff}); 
-				material.map = res;
+				//material.map = res;
 				material.bumpMap = res;
 				material.bumpScale = 0.7;
 				var bubble = new THREE.Mesh( geometry, material );
