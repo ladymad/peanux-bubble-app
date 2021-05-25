@@ -31,7 +31,7 @@
 			var StartPos = 0;
 			var DisCamera2Start = 250;
 			var DisLight2Start = 100;
-			var DisButton2Start = 225;
+			var DisButton2Start = DisCamera2Start*0.9;
 			var rate = 2;
 			var MoveCameraSpeed = 0.2*rate;
 			var MoveBubbleSpeedMax = 0.4*rate;
@@ -44,6 +44,13 @@
 				bubbleSpeedXYmax: MoveBubbleSpeedMax,
 				bubbleSpeedZmaz: MoveCameraSpeed,
 				bubbleRotateSpeed: BubbleRotateSpeed,
+			};
+
+			var ObjectType = {
+				bubble:0,
+				bubble_glow:1,
+				bubble_aero:2,
+				button_record:3,
 			};
 
 			var vertexShader = [
@@ -215,19 +222,15 @@
 					return;
 				}
 				let obj=intersects[0].object;
-				if (1==obj.param.isClicked) {
-					return;
+
+				if (ObjectType.bubble==obj.param.type) {
+					//obj.param.isClicked = 1;
+					var tmpPos = obj.position;
+					var tmpParam = obj.param;
+					scene.remove( obj );
+					//console.log(obj.position);
+					CreateBubbleGlow(tmpPos,tmpParam);
 				}
-				obj.param.isClicked = 1;
-				var tmpPos = obj.position;
-				var tmpBubbleParam = obj.param;
-				scene.remove( obj );
-
-				//console.log(obj.position);
-				scene.remove(bubble_glow);
-				scene.remove(bubble_aero);
-
-				CreateBubbleGlow(tmpPos,tmpBubbleParam);
 			}
 			
 			//
@@ -241,15 +244,19 @@
 					opacity: 0,
 					depthWrite:true
 				});
+				var buttonParam = {
+					type: ObjectType.button_record,
+				};
 				//console.log(material1);
-				var sphere_aero = new THREE.SphereGeometry(0.9, 60, 60);
-				var mesh_aero = new THREE.Mesh(sphere_aero, new THREE.MeshBasicMaterial({color:0xff0000}));
-				mesh_aero.position.x=0;
-				mesh_aero.position.y=-7;
-				mesh_aero.position.z=StartPos + DisButton2Start;
+				var sphere_button = new THREE.SphereGeometry(0.9, 60, 60);
+				var button = new THREE.Mesh(sphere_button, new THREE.MeshBasicMaterial({color:0xff0000}));
+				button.position.x=0;
+				button.position.y=-7;
+				button.position.z=StartPos + DisButton2Start;
 				//bubbles_aero.push(mesh);
-				scene.add(mesh_aero);
-
+				button.param = buttonParam;
+				scene.add(button);
+				/***
 				sphere_aero = new THREE.SphereBufferGeometry(1, 60, 60);
 				mesh_aero = new THREE.Mesh(sphere_aero, material_aero);
 				mesh_aero.position.x=0;
@@ -257,14 +264,15 @@
 				mesh_aero.position.z=StartPos + DisButton2Start;
 				//bubbles_aero.push(mesh);
 				//scene.add(mesh_aero);
-
-				sphere_aero = new THREE.SphereBufferGeometry(1.1, 60, 60);
-				mesh_aero = new THREE.Mesh(sphere_aero, material_aero);
-				mesh_aero.position.x=0;
-				mesh_aero.position.y=-7;
-				mesh_aero.position.z=StartPos + DisButton2Start;
+				***/
+				var sphere_aero = new THREE.SphereBufferGeometry(1.1, 60, 60);
+				var button_aero = new THREE.Mesh(sphere_aero, material_aero);
+				button_aero.position.x=0;
+				button_aero.position.y=-7;
+				button_aero.position.z=StartPos + DisButton2Start;
 				//bubbles_aero.push(mesh);
-				scene.add(mesh_aero);
+				button_aero.param = buttonParam;
+				scene.add(button_aero);
 
 			}
 			// 生成气泡
@@ -283,6 +291,7 @@
 						//MaxRadius: Math.random()*4+3,
 						InitRadius: Math.random()*5+2,
 						isClicked: 0,
+						type: ObjectType.bubble,
 						//color: bubbleColor[Math.floor(Math.random()*bubbleColor.length)],
 						//color: Math.random() * 25 + 175,
 						//isSpeedChanged:0,
@@ -291,7 +300,7 @@
 						//apcChangeCnt: 1000,
 						//isClicked: 0,
 						//apc: 0
-					};
+				};
 				const geometry = new THREE.SphereGeometry(bubbleParam.InitRadius,30,30);
 				//const material = new THREE.MeshPhongMaterial();
 
@@ -313,6 +322,9 @@
 
 			//球体 辉光 大气层
 			function CreateBubbleGlow(Pos,Params) {    
+				scene.remove(bubble_glow);
+				scene.remove(bubble_aero);
+
 				var material_aero = new THREE.ShaderMaterial({
 					uniforms: THREE.AeroSphere.uniforms,
 					vertexShader: THREE.AeroSphere.vertexShader,
@@ -330,15 +342,16 @@
 					transparent: false,
 				});
 
-				var sphere_aero = new THREE.SphereBufferGeometry(Params.InitRadius*1.2, 32, 32);
+				var sphere_aero = new THREE.SphereBufferGeometry(Params.InitRadius, 32, 32);
 				bubble_aero = new THREE.Mesh(sphere_aero, material_aero);
 				bubble_aero.param = Params;
-				bubble_aero.radius = Params.InitRadius*1.2;
+				bubble_aero.radius = Params.InitRadius;
 				bubble_aero.param.radiusChange = Params.InitRadius*0.2/100;
 				bubble_aero.radiusChange = bubble_aero.param.radiusChange;
 				bubble_aero.position.x=Pos.x;
 				bubble_aero.position.y=Pos.y;
 				bubble_aero.position.z=Pos.z;
+				bubble_aero.param.type = ObjectType.bubble_aero;
 				scene.add(bubble_aero);
 
 				//var sphere_glow = new THREE.SphereBufferGeometry(Params.InitRadius, 32, 32);
@@ -350,6 +363,7 @@
 				bubble_glow.position.x=Pos.x;
 				bubble_glow.position.y=Pos.y;
 				bubble_glow.position.z=Pos.z;
+				bubble_glow.param.type = ObjectType.bubble_glow;
 				scene.add(bubble_glow);
 			}
 
@@ -421,6 +435,7 @@
 				camera.position.z = StartPos+DisCamera2Start;
 				PointLight.position.z = StartPos+DisLight2Start;
 				PointLight2.position.z = StartPos+DisCamera2Start*2;
+				//DisButton2Start = StartPos+DisCamera2Start*0.9;
 				renderer.render( scene, camera );
 			};
 		</script>
