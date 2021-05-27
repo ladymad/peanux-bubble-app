@@ -2,6 +2,7 @@
 node_modules/
 unpackage/
 dist/
+directoryList.md
 
 # local env files
 .env.local

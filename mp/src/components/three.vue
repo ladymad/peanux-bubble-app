@@ -31,7 +31,7 @@ const CreateBubbleFrame = 50 * rate;
 @Component
 export default class Scene extends Vue {
   // 初始化数据
-  private bubbles: Array<any> = [];
+  private bubbles: any[] = [];
 
   private StartPos = 0;
   private scene: THREE.Scene = new THREE.Scene();
@@ -53,7 +53,7 @@ export default class Scene extends Vue {
   // 计算属性
 
   // 生命周期钩子
-  mounted() {}
+  // mounted() {}
 
   // 方法
   init() {
@@ -68,65 +68,65 @@ export default class Scene extends Vue {
     PointLight.position.z = this.StartPos + DisLight2Start;
     this.scene.add(PointLight);
   }
-  onMouseClick(event: any) {
-    //通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
+  // onMouseClick(event: any) {
+  //   //通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
 
-    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  //   this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  //   this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-    // 通过鼠标点的位置和当前相机的矩阵计算出raycaster
-    this.raycaster.setFromCamera(this.mouse, this.camera);
+  //   // 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+  //   this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // 获取raycaster直线和所有模型相交的数组集合
-    var intersects = this.raycaster.intersectObjects(this.scene.children);
+  //   // 获取raycaster直线和所有模型相交的数组集合
+  //   var intersects = this.raycaster.intersectObjects(this.scene.children);
 
-    //将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
-    if (!intersects.length) {
-      return;
-    }
-    let obj = intersects[0].object;
-    // for (var i = 0; i < intersects.length; i++) {
-    // 	var obj = intersects[i].object;
-    if (1 == obj.bubbleParam.isClicked) {
-      // continue;
-      return;
-    }
-    obj.bubbleParam.isClicked = 1;
-    var tmpPosX = obj.position.x;
-    var tmpPosY = obj.position.y;
-    var tmpPosZ = obj.position.z;
-    var tmpRotX = obj.rotation.x;
-    var tmpRotY = obj.rotation.y;
-    var tmpRotZ = obj.rotation.z;
-    var tmpBubbleParam = obj.bubbleParam;
-    tmpBubbleParam.speedX = tmpBubbleParam.speedX / 10;
-    tmpBubbleParam.speedY = tmpBubbleParam.speedY / 10;
-    this.scene.remove(obj);
+  //   //将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
+  //   if (!intersects.length) {
+  //     return;
+  //   }
+  //   let obj = intersects[0].object;
+  //   // for (var i = 0; i < intersects.length; i++) {
+  //   // 	var obj = intersects[i].object;
+  //   if (1 == obj.bubbleParam.isClicked) {
+  //     // continue;
+  //     return;
+  //   }
+  //   obj.bubbleParam.isClicked = 1;
+  //   var tmpPosX = obj.position.x;
+  //   var tmpPosY = obj.position.y;
+  //   var tmpPosZ = obj.position.z;
+  //   var tmpRotX = obj.rotation.x;
+  //   var tmpRotY = obj.rotation.y;
+  //   var tmpRotZ = obj.rotation.z;
+  //   var tmpBubbleParam = obj.bubbleParam;
+  //   tmpBubbleParam.speedX = tmpBubbleParam.speedX / 10;
+  //   tmpBubbleParam.speedY = tmpBubbleParam.speedY / 10;
+  //   this.scene.remove(obj);
 
-    //console.log(obj.position);
-    var res = new THREE.TextureLoader().load("./tex/tex1.jpg", (res) => {
-      var NewMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-      //NewMaterial.map = res;
-      NewMaterial.transparent = true;
-      NewMaterial.opacity = 0.5;
-      var NewObj = new THREE.Mesh(obj.geometry, NewMaterial);
-      //console.log(tmpPos);
-      NewObj.position.x = tmpPosX;
-      NewObj.position.y = tmpPosY;
-      NewObj.position.z = tmpPosZ;
-      NewObj.rotation.x = tmpRotX;
-      NewObj.rotation.y = tmpRotY;
-      NewObj.rotation.y = tmpRotZ;
-      NewObj.bubbleParam = tmpBubbleParam;
-      //console.log(NewObj.position);
-      this.bubbles.push(NewObj);
-      this.scene.add(NewObj);
-    });
-    // }
-  }
+  //   //console.log(obj.position);
+  //   var res = new THREE.TextureLoader().load("./tex/tex1.jpg", (res) => {
+  //     var NewMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  //     //NewMaterial.map = res;
+  //     NewMaterial.transparent = true;
+  //     NewMaterial.opacity = 0.5;
+  //     var NewObj = new THREE.Mesh(obj.geometry, NewMaterial);
+  //     //console.log(tmpPos);
+  //     NewObj.position.x = tmpPosX;
+  //     NewObj.position.y = tmpPosY;
+  //     NewObj.position.z = tmpPosZ;
+  //     NewObj.rotation.x = tmpRotX;
+  //     NewObj.rotation.y = tmpRotY;
+  //     NewObj.rotation.y = tmpRotZ;
+  //     // NewObj.bubbleParam = tmpBubbleParam;
+  //     //console.log(NewObj.position);
+  //     this.bubbles.push(NewObj);
+  //     this.scene.add(NewObj);
+  //   });
+  //   // }
+  // }
 
   CreateBubbles() {
-    var bubbleParam = {
+    let bubbleParam = {
       //x: (Math.random() - 0.5)*windowW/2,
       //y: (Math.random() - 0.5)*windowH/2,
       //applitude: Math.random(),
@@ -151,20 +151,20 @@ export default class Scene extends Vue {
     const geometry = new THREE.SphereGeometry(bubbleParam.InitRadius, 30, 30);
     //const material = new THREE.MeshPhongMaterial();
 
-    var texture = new THREE.TextureLoader().load("./tex/tex1.jpg", (res) => {
+    let texture = new THREE.TextureLoader().load("./tex/tex1.jpg", (res) => {
       const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
       material.map = res;
       //material.transparent = true;
       //material.opacity = 0.5;
       material.bumpMap = res;
       material.bumpScale = 0.9;
-      var bubble = new THREE.Mesh(geometry, material);
+      let bubble = new THREE.Mesh(geometry, material);
 
       bubble.position.x = 0;
       bubble.position.y = 0;
 
-      bubble.position.z = StartPos;
-      bubble.bubbleParam = bubbleParam;
+      bubble.position.z = this.StartPos;
+      // bubble.bubbleParam = bubbleParam;
       //PointLight.position.z -= 0.2;
       this.scene.add(bubble);
       this.bubbles.push(bubble);
@@ -178,9 +178,12 @@ export default class Scene extends Vue {
       this.bubbles.shift();
     }
 
+    
+
+
     for (let i = 0; i < this.bubbles.length; i++) {
       const bubble = this.bubbles[i];
-      if (bubble.bubbleParam.isClicked == 1) {
+      if (bubble.bubbleParam.isClicked === 1) {
         bubble.position.z -= MoveCameraSpeed;
         continue;
       }
@@ -205,10 +208,10 @@ export default class Scene extends Vue {
   }
 
   MoveCamera() {
-				this.StartPos -= MoveCameraSpeed;
-				this.camera.position.z = this.StartPos+DisCamera2Start;
-				PointLight.position.z = this.StartPos+DisLight2Start;
-			}
+    this.StartPos -= MoveCameraSpeed;
+    this.camera.position.z = this.StartPos + DisCamera2Start;
+    // PointLight.position.z = this.StartPos+DisLight2Start;
+  }
 }
 </script>
 

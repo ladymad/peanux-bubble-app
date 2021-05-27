@@ -1,19 +1,74 @@
-# bubble-app
+#### 需要实现的功能
+- 个人列表
+	- [ ]录音：录音结束后可写入文字说明，并添加到个人录音列表
+	- [ ]处理录音：在个人录音列表中可完成
+		- [ ]删除已有录音
+		- [ ]发送至气泡群（服务器）
+	- [ ]处理收藏声音：在个人收藏列表中完成：
+		- [ ]删除已收藏录音
+- 气泡交互
+	- [ ]主界面中的气泡群（本地）
+	- [ ]交互
+		- [ ]点击气泡
+		- [ ]进入播放：从服务器随机拿取一段声音以及相关信息
+		- [ ]播放声音
+			- [ ]点击收藏：加入个人列表
+			- [ ]取消播放：如果在收听时点击其他气泡/录音/播放其他声音，直接取消当前播放
 
-## Project setup
-```
-yarn install
-```
 
-### Compiles and hot-reloads for development
-```
-yarn serve
-```
+#### 功能实现框架
+#### 气泡群-本地
+##### 运动
+1. 气泡群分为三层，前中后，越靠前的气泡会优先被点击到。不同层之间的气泡互不影响
+2. 同一层的气泡会随机漂浮，并且有碰撞效果
 
-### Compiles and minifies for production
-```
-yarn build
-```
+##### 交互
+1. 点击气泡后，气泡破灭
+2. 进入远端声音播放
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+#### 远端声音播放
+##### 服务器交互
+1. 点击气泡，向服务器发送请求
+2. 服务器随机选取一段声音返回
+
+##### 声音播放
+1. 播放服务器传回的声音
+2. 显示这段声音的文字信息和时间长度
+3. 收藏按钮
+
+##### 取消播放
+1. 当点击其他气泡时，重新进入声音播放
+2. 当开启录音功能时，进入录音
+3. 当播放其他收藏或个人录音列表时，进入本地声音播放
+4. 会立即停止当前录音的播放
+
+#### 本地声音播放
+声音播放
+
+
+#### 目录结构
+
+```
+|-- bubble-app
+    |-- .gitignore
+    |-- README.md
+    |-- mp  //小程序
+    |   |-- babel.config.js
+    |   |-- package-lock.json
+    |   |-- package.json
+    |   |-- postcss.config.js
+    |   |-- README.md
+    |   |-- tsconfig.json
+    |   |-- tslint.json
+    |   |-- webpack.config.ts
+    |   |-- yarn.lock
+    |   |-- public
+    |   |-- src
+    |   |-- types
+    |-- prj //原始项目
+        |-- 3dBubbles.html
+        |-- DarkStar.html
+        |-- lib
+        |-- ref
+        |-- tex
+```

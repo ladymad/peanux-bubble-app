@@ -1,5 +1,5 @@
-var path = require('path');
-var HtmlWebPackPlugin = require("html-webpack-plugin");
+let path = require('path');
+let HtmlWebPackPlugin = require("html-webpack-plugin");
 module.exports = {
     //项目入口
     entry: "./src/main.ts",
