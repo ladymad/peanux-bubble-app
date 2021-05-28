@@ -43,6 +43,7 @@
 		var CreateBubbleFrame = 100 / rate;
 
 		var AudioPlayState = 0;
+		var PlayState = 0; // 0: Not Playing, 1: Playing
 		var RecordState = 0; // 0: Not Recording, 1: Recording
 		var debugState = {
 			PointLightPos: DisLight2Start,
@@ -419,13 +420,13 @@
 			 * maxTimes 扩大倍数
 			*/
 			function createAero(maxTimes) {
-				let argPara=JSON.parse(JSON.stringify(Params));
+				let argPara = JSON.parse(JSON.stringify(Params));
 				var sphereAero = new THREE.SphereBufferGeometry(argPara.InitRadius, 32, 32);
 				var bubbleAero = new THREE.Mesh(sphereAero, materialAero);
 				bubbleAero.param = argPara;
 				bubbleAero.radius = argPara.InitRadius;
 				bubbleAero.param.radiusChange = argPara.InitRadius * 0.2 / 100;
-				bubbleAero.param.MaxRadius=argPara.InitRadius*maxTimes;
+				bubbleAero.param.MaxRadius = argPara.InitRadius * maxTimes;
 				bubbleAero.radiusChange = argPara.radiusChange;
 				bubbleAero.position.x = Pos.x;
 				bubbleAero.position.y = Pos.y;
@@ -461,7 +462,7 @@
 			}
 		}
 
-		
+
 
 		function animateBubbleMove() {
 			if (bubbles.length > 1000) {
@@ -491,8 +492,11 @@
 			}
 		}
 
+
+
 		function animateBubblePlay() {
-			if (bubblePlay.length > 1) {
+			if (bubblePlay.length > 1 ) {
+			// if (bubblePlay.length > 1 && PlayState == 1) {
 				for (let i = 1; i < bubblePlay.length; i++) {
 					var bubbleAero = bubblePlay[i];
 					//console.log(bubblePlay[i].param.MaxRadius)
@@ -529,6 +533,15 @@
 			}
 		}
 
+		function animateButtonRecord() {
+			for (let i = 1; i < buttonRecord.length; i++) {
+				var button = buttonRecord[i];
+				button.rotation.x += BubbleRotateSpeed;
+				button.rotation.y += BubbleRotateSpeed;
+				button.rotation.z += BubbleRotateSpeed;
+			}
+		}
+
 		function animateLightAndCameraMove() {
 			camera.position.z = StartPos + DisCamera2Start;
 			PointLight.position.z = StartPos + DisLight2Start;
@@ -543,15 +556,9 @@
 			animateBubbleMove();
 			// 点击后气泡播放
 			animateBubblePlay();
+			// 
+			animateButtonRecord();
 
-			if (RecordState == 1) {
-				var ball;
-				for (let i = 1; i < button.length; i++) {
-					ball = button[i];
-					//ball.position.x = sin()
-
-				}
-			}
 			renderer.render(scene, camera);
 		};
 	</script>
