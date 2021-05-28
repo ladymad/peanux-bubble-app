@@ -25,38 +25,35 @@
 		//window.resizeTo(windowH/2,windowH);
 		//window.onresize=new Function("window.resizeTo(windowH/2,windowH);") 
 
-		// 全局参数设置
-		var bubbles = [];
-		var bubblePlay = [];
-		var button = [];
-		var buttonRecord = null;
-		var buttonRecordAero = null;
+			// 全局参数设置
+			var bubbles = [];
+			var bubblePlay = [];
+			var buttonRecord = [];
 
-		var StartPos = 0;
-		var DisCamera2Start = 250;
-		var DisLight2Start = 60;
-		var DisButton2Start = DisCamera2Start * 0.9;
-		var rate = 2;
-		var MoveCameraSpeed = 0.2 * rate;
-		var MoveBubbleSpeedMax = 0.4 * rate;
-		var BubbleRotateSpeed = 0.003 * rate;
-		var CreateBubbleFrame = 100 / rate;
+			var StartPos = 0;
+			var DisCamera2Start = 300;
+			var DisLight2Start = 60;
+			var DisButton2Start = DisCamera2Start-25;
+			var rate = 1;
+			var MoveCameraSpeed = 0.5*rate;
+			var MoveBubbleSpeedMax = 0.4*rate;
+			var BubbleRotateSpeed = 0.003*rate;
+			var CreateBubbleFrame = 100/rate;
 
-		var AudioPlayState = 0;
-		var PlayState = 0; // 0: Not Playing, 1: Playing
-		var RecordState = 0; // 0: Not Recording, 1: Recording
-		var debugState = {
-			PointLightPos: DisLight2Start,
-			CameraPos: DisCamera2Start,
-			bubbleSpeedXYmax: MoveBubbleSpeedMax,
-			bubbleSpeedZmaz: MoveCameraSpeed,
-			bubbleRotateSpeed: BubbleRotateSpeed,
-		};
-		var ObjectType = {
-			bubble: 0,
-			bubblePlay: 1,
-			buttonRecord: 2,
-		};
+			var PlayState = 0; // 0: Not Playing, 1: Playing
+			var RecordState = 0; // 0: Not Recording, 1: Recording
+			var debugState = {
+				PointLightPos: DisLight2Start,
+				CameraPos: DisCamera2Start,
+				bubbleSpeedXYmax: MoveBubbleSpeedMax,
+				bubbleSpeedZmaz: MoveCameraSpeed,
+				bubbleRotateSpeed: BubbleRotateSpeed,
+			};
+			var ObjectType = {
+				bubble:0,
+				bubblePlay:1,
+				buttonRecord:2,
+			};
 
 		var vertexShader = [
 			'varying vec3	vVertexWorldPosition;',
@@ -180,23 +177,24 @@
 		// 鼠标点击
 		var raycaster = new THREE.Raycaster();
 		var mouse = new THREE.Vector2();
-		window.addEventListener('click', onMouseClick, false);
+		window.addEventListener('click', OnMouseClick, false);
 
 		// 开始
 		Start();
 
 		/*** 函数 ***/
 
-		// 开始
-		function Start() {
-			// GUI
-			CreateGUI();
-			// 生成气泡
-			CreateRecordButton();
-			setInterval(CreateBubbles, CreateBubbleFrame);
-			// 运动动画
-			animate();
-		}
+			// 开始
+			function Start() {
+				// GUI
+				CreateGUI();
+				// 生成录音按钮
+				CreateButtonRecord();
+				// 生成气泡
+				setInterval(CreateBubbles,CreateBubbleFrame);
+				// 运动动画
+				Animate();
+			}
 
 		function CreateGUI() {
 			const gui = new GUI();
@@ -208,7 +206,7 @@
 			gui.add(debugState, 'bubbleRotateSpeed', 0.001, 0.02, 0.001).onChange(e => { BubbleRotateSpeed = e });
 		}
 		// 单击事件
-		function onMouseClick(event) {
+		function OnMouseClick(event) {
 			//通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
 
 			mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -230,14 +228,38 @@
 			var tmpPos = obj.position;
 			var tmpParam = obj.param;
 
-			if (ObjectType.bubble == obj.param.type) {
-				scene.remove(obj);
-				//console.log(obj.position);
-				CreateBubblePlay(tmpPos, tmpParam);
+				if (ObjectType.bubble==obj.param.type) {
+					if (RecordState==0) {
+						PlayState = 1;
+						//console.log(obj.position);
+						scene.remove(obj);
+						CreateBubblePlay(tmpPos,tmpParam);
+					}
+				}
+
+				if (ObjectType.buttonRecord==obj.param.type) {
+					if (RecordState==0) {
+						RecordState = 1;
+						PlayState = 0;
+						for (let i=0;i<bubblePlay.length;i++) {
+							scene.remove(bubblePlay[i]);
+						}
+						scene.remove(buttonRecord[1]);
+						scene.add(buttonRecord[2]);
+					}
+					else {
+						RecordState = 0;
+						scene.remove(buttonRecord[2]);
+						scene.add(buttonRecord[1]);
+					}
+				}
 			}
-			if (ObjectType.buttonRecord == obj.param.type && RecordState == 0) {
-				RecordState = 1;
-				/***
+			
+			//
+			function CreateButtonRecord() {
+				for (let i=0;i<buttonRecord.length;i++) {
+					scene.remove(buttonRecord[i]);
+				}
 				var materialAero = new THREE.ShaderMaterial({
 					uniforms: THREE.AeroSphere.uniforms,
 					vertexShader: THREE.AeroSphere.vertexShader,
@@ -247,94 +269,42 @@
 					opacity: 0,
 					depthWrite:true
 				});
-				//obj.param.isClicked = 1;
-				//console.log("cliked")
-				RecordState = 1;
-				scene.remove( buttonRecord );
-				scene.remove( buttonRecordAero );
-				var cubic_button = new THREE.BoxGeometry(1.1, 1.1, 1.1);
-				buttonRecord = new THREE.Mesh(cubic_button,  new THREE.MeshBasicMaterial({color:0xff0000}));
-				buttonRecord.position.x=tmpPos.x;
-				buttonRecord.position.y=tmpPos.y;
-				buttonRecord.position.z=tmpPos.z;
-				//bubbles_aero.push(mesh);
-				buttonRecord.param = tmpParam;
-				scene.add(buttonRecord);
+				var buttonParam = {
+					type: ObjectType.buttonRecord,
+				};
 
-				var cubic_aero = new THREE.BoxGeometry(1.3, 1.3, 1.3);
-				buttonRecordAero = new THREE.Mesh(cubic_aero, materialAero);
-				buttonRecordAero.position.x=tmpPos.x;
-				buttonRecordAero.position.y=tmpPos.y;
-				buttonRecordAero.position.z=tmpPos.z;
+				var sphereAero = new THREE.SphereBufferGeometry(1.0, 32, 32);
+				var buttonAero = new THREE.Mesh(sphereAero, materialAero);
+				//buttonAero.material.transparent = true;
+				//buttonAero.material.opacity = 0.7;
+				buttonAero.param = buttonParam;
+				buttonAero.position.x = 0;
+				buttonAero.position.y = -7;
+				buttonAero.position.z = StartPos + DisButton2Start;
+				//console.log(buttonAero);
+				buttonRecord[0] = buttonAero;
+				scene.add(buttonRecord[0]);
+
+				//console.log(material1);
+				var sphere = new THREE.SphereGeometry(0.9, 32, 32);
+				var buttonSphere = new THREE.Mesh(sphere, new THREE.MeshBasicMaterial({color:0xff0000}));
+				buttonSphere.position.x = 0;
+				buttonSphere.position.y = -7;
+				buttonSphere.position.z = StartPos + DisButton2Start;
 				//bubbles_aero.push(mesh);
-				buttonRecordAero.param = tmpParam;
-				scene.add(buttonRecordAero);
-				***/
+				buttonSphere.param = buttonParam;
+				buttonRecord[1] = buttonSphere;
+				scene.add(buttonRecord[1]);
+
+				var cubic = new THREE.BoxGeometry(1.0,1.0,1.0);
+				var buttonCubic = new THREE.Mesh(cubic, new THREE.MeshBasicMaterial({color:0xff0000}));
+				buttonCubic.position.x = 0;
+				buttonCubic.position.y = -7;
+				buttonCubic.position.z = StartPos + DisButton2Start;
+				//bubbles_aero.push(mesh);
+				buttonCubic.param = buttonParam;
+				buttonRecord[2] = buttonCubic;
 			}
-		}
-
-		//
-		function CreateRecordButton() {
-			var materialAero = new THREE.ShaderMaterial({
-				uniforms: THREE.AeroSphere.uniforms,
-				vertexShader: THREE.AeroSphere.vertexShader,
-				fragmentShader: THREE.AeroSphere.fragmentShader,
-				blending: THREE.NormalBlending,
-				transparent: true,
-				opacity: 0,
-				depthWrite: true
-			});
-			var buttonParam = {
-				type: ObjectType.buttonRecord,
-			};
-			//console.log(material1);
-			var sphereButton = new THREE.SphereGeometry(1.1, 60, 60);
-			buttonRecord = new THREE.Mesh(sphereButton, materialAero);
-			buttonRecord.position.x = 0;
-			buttonRecord.position.y = -7;
-			buttonRecord.position.z = StartPos + DisButton2Start;
-			//bubbles_aero.push(mesh);
-			buttonRecord.param = buttonParam;
-			scene.add(buttonRecord);
-			button.push(buttonRecord);
-			/***
-			sphereAero = new THREE.SphereBufferGeometry(1, 60, 60);
-			meshAero = new THREE.Mesh(sphereAero, materialAero);
-			meshAero.position.x=0;
-			meshAero.position.y=-7;
-			meshAero.position.z=StartPos + DisButton2Start;
-			//bubbles_aero.push(mesh);
-			//scene.add(meshAero);
-			***/
-			var sphereAero = null;
-			sphereAero = new THREE.SphereGeometry(0.4, 60, 60);
-			buttonRecordAero = new THREE.Mesh(sphereAero, new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.7 }));
-			buttonRecordAero.position.x = 0 + (Math.random() - 0.5) * 1;
-			buttonRecordAero.position.y = -7 + (Math.random() - 0.5) * 1;
-			buttonRecordAero.position.z = StartPos + DisButton2Start;
-			buttonRecordAero.param = buttonParam;
-			scene.add(buttonRecordAero);
-			button.push(buttonRecordAero);
-
-			sphereAero = new THREE.SphereGeometry(0.5, 60, 60);
-			buttonRecordAero = new THREE.Mesh(sphereAero, new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.7 }));
-			buttonRecordAero.position.x = 0 + (Math.random() - 0.5) * 1;
-			buttonRecordAero.position.y = -7 + (Math.random() - 0.5) * 1;
-			buttonRecordAero.position.z = StartPos + DisButton2Start;
-			buttonRecordAero.param = buttonParam;
-			scene.add(buttonRecordAero);
-			button.push(buttonRecordAero);
-
-			sphereAero = new THREE.SphereGeometry(0.6, 60, 60);
-			buttonRecordAero = new THREE.Mesh(sphereAero, new THREE.MeshBasicMaterial({ color: 0xff00ff, transparent: true, opacity: 0.7 }));
-			buttonRecordAero.position.x = 0 + (Math.random() - 0.5) * 1;
-			buttonRecordAero.position.y = -7 + (Math.random() - 0.5) * 1;
-			buttonRecordAero.position.z = StartPos + DisButton2Start;
-			buttonRecordAero.param = buttonParam;
-			scene.add(buttonRecordAero);
-			button.push(buttonRecordAero);
-
-		}
 
 
 		// 生成气泡
@@ -409,7 +379,7 @@
 
 			var sphereGlow = new THREE.SphereGeometry(Params.InitRadius, 32, 32);
 			var colorGlow = Math.random() * 16777215;
-			var bubbleGlow = new THREE.Mesh(sphereGlow, new THREE.MeshBasicMaterial({ color: colorGlow, transparent: true, opacity: 0.7 }));
+			var bubbleGlow = new THREE.Mesh(sphereGlow, new THREE.MeshBasicMaterial({ color: colorGlow, transparent: true, opacity: 1.0 }));
 			bubbleGlow.param = JSON.parse(JSON.stringify(Params));
 			bubbleGlow.position.x = Pos.x;
 			bubbleGlow.position.y = Pos.y;
@@ -421,12 +391,12 @@
 			*/
 			function createAero(maxTimes) {
 				let argPara = JSON.parse(JSON.stringify(Params));
-				var sphereAero = new THREE.SphereBufferGeometry(argPara.InitRadius, 32, 32);
+				var sphereAero = new THREE.SphereBufferGeometry(argPara.InitRadius*maxTimes, 32, 32);
 				var bubbleAero = new THREE.Mesh(sphereAero, materialAero);
 				bubbleAero.param = argPara;
 				bubbleAero.radius = argPara.InitRadius;
-				bubbleAero.param.radiusChange = argPara.InitRadius * 0.2 / 100;
-				bubbleAero.param.MaxRadius = argPara.InitRadius * maxTimes;
+				bubbleAero.param.radiusChange = argPara.InitRadius*0.2/100;
+				bubbleAero.param.MaxRadius = argPara.InitRadius*maxTimes;
 				bubbleAero.radiusChange = argPara.radiusChange;
 				bubbleAero.position.x = Pos.x;
 				bubbleAero.position.y = Pos.y;
@@ -435,27 +405,9 @@
 				return bubbleAero;
 			}
 
-			//bubbleAero.param.MaxRadius = Params.InitRadius*1.1;
-			/***
-			var sphereAero2 = new THREE.SphereBufferGeometry(Params.InitRadius, 32, 32);
-			var bubbleAero2 = new THREE.Mesh(sphereAero2, materialAero);
-			bubbleAero2.param = Params;
-			bubbleAero2.radius = Params.InitRadius;
-			bubbleAero2.param.radiusChange = Params.InitRadius*0.2/100;
-			bubbleAero2.radiusChange = bubbleAero.param.radiusChange;
-			bubbleAero2.position.x = Pos.x;
-			bubbleAero2.position.y = Pos.y;
-			bubbleAero2.position.z = Pos.z;
-			bubbleAero2.param.type = ObjectType.bubblePlay;
-			bubbleAero2.param.MaxRadius = Params.InitRadius*1.2;
-			***/
 			bubblePlay[0] = bubbleGlow;
-			bubblePlay[1] = createAero(1.1);
-			bubblePlay[2] = createAero(1.5);
-
-			console.log(bubblePlay[0].param.MaxRadius)
-			console.log(bubblePlay[1].param.MaxRadius)
-			console.log(bubblePlay[2].param.MaxRadius)
+			bubblePlay[1] = createAero(1.2);
+			bubblePlay[2] = createAero(1.2);
 
 			for (let i = 0; i < bubblePlay.length; i++) {
 				scene.add(bubblePlay[i]);
@@ -464,7 +416,7 @@
 
 
 
-		function animateBubbleMove() {
+		function AnimateBubbleMove() {
 			if (bubbles.length > 1000) {
 				bubbles.shift();
 			}
@@ -486,28 +438,25 @@
 				bubble.rotation.y += bubble.param.RotSpeed;
 				bubble.rotation.z += bubble.param.RotSpeed;
 
-				if (bubble.position.z > camera.position.z) {
-					scene.remove(bubble);
+					if (bubble.position.z>camera.position.z) {
+						scene.remove(bubble);
+					}
 				}
 			}
-		}
-
-
-
-		function animateBubblePlay() {
-			if (bubblePlay.length > 1 ) {
-			// if (bubblePlay.length > 1 && PlayState == 1) {
-				for (let i = 1; i < bubblePlay.length; i++) {
-					var bubbleAero = bubblePlay[i];
-					//console.log(bubblePlay[i].param.MaxRadius)
-					scene.remove(bubblePlay[i]);
-					if (bubbleAero.radius > bubbleAero.param.MaxRadius) {
-						bubbleAero.radiusChange = - bubbleAero.param.radiusChange;
-						//aero_opacity=1;
-					}
-					if (bubbleAero.radius <= bubbleAero.param.InitRadius * 1 + bubbleAero.param.radiusChange) {
-						bubbleAero.radiusChange = + bubbleAero.param.radiusChange;
-					}
+			
+			function AnimateBubblePlay() {
+				if (bubblePlay.length>1 && PlayState==1) {
+					for (let i=1;i<bubblePlay.length;i++) {
+						var bubbleAero = bubblePlay[i];
+						//console.log(bubblePlay[i].param.MaxRadius)
+						scene.remove(bubblePlay[i]);
+						if (bubbleAero.radius>bubbleAero.param.MaxRadius) {
+							bubbleAero.radiusChange = - bubbleAero.param.radiusChange;
+							//aero_opacity=1;
+						}
+						if (bubbleAero.radius<=bubbleAero.param.InitRadius*1+bubbleAero.param.radiusChange ) {
+							bubbleAero.radiusChange = + bubbleAero.param.radiusChange;
+						}
 
 					var materialAero = new THREE.ShaderMaterial({
 						uniforms: THREE.AeroSphere.uniforms,
@@ -519,46 +468,49 @@
 						depthWrite: true
 					});
 
-					var sphereAero = new THREE.SphereBufferGeometry(bubbleAero.radius + bubbleAero.radiusChange, 32, 32);
-					var meshAero = new THREE.Mesh(sphereAero, materialAero);
-					meshAero.position.x = bubbleAero.position.x;
-					meshAero.position.y = bubbleAero.position.y;
-					meshAero.position.z = bubbleAero.position.z;
-					meshAero.radius = bubbleAero.radius + bubbleAero.radiusChange;
-					meshAero.radiusChange = bubbleAero.radiusChange;
-					meshAero.param = bubbleAero.param;
-					bubblePlay[i] = meshAero;
-					scene.add(bubblePlay[i]);
+						var sphereAero = new THREE.SphereBufferGeometry(bubbleAero.radius + bubbleAero.radiusChange, 32, 32);
+						var meshAero = new THREE.Mesh(sphereAero, materialAero);
+						meshAero.position.x = bubbleAero.position.x;
+						meshAero.position.y = bubbleAero.position.y;
+						meshAero.position.z = bubbleAero.position.z;
+						meshAero.radius = bubbleAero.radius + bubbleAero.radiusChange;
+						meshAero.radiusChange = bubbleAero.radiusChange;
+						meshAero.param = bubbleAero.param;
+						bubblePlay[i] = meshAero;
+						scene.add(bubblePlay[i]);
+					}
 				}
 			}
-		}
-
-		function animateButtonRecord() {
-			for (let i = 1; i < buttonRecord.length; i++) {
-				var button = buttonRecord[i];
-				button.rotation.x += BubbleRotateSpeed;
-				button.rotation.y += BubbleRotateSpeed;
-				button.rotation.z += BubbleRotateSpeed;
+			
+			function AnimateButtonRecord() {
+				for (let i=0;i<buttonRecord.length;i++) {
+					var button = buttonRecord[i];
+					button.rotation.x += BubbleRotateSpeed;
+					button.rotation.y += BubbleRotateSpeed;
+					button.rotation.z += BubbleRotateSpeed;
+					button.position.z = StartPos+DisButton2Start;
+				}
 			}
-		}
+			
+			function AnimateLightAndCameraMove() {
+				camera.position.z = StartPos+DisCamera2Start;
+				PointLight.position.z = StartPos+DisLight2Start;
+				PointLight2.position.z = StartPos+DisCamera2Start*2;
+				DisButton2Start = DisCamera2Start-25;
+			}
+			// 生成动画
+			function Animate() {
+				requestAnimationFrame( Animate );
+				// 摄像机和灯光运动
+				AnimateLightAndCameraMove();
+				// 气泡运动
+				AnimateBubbleMove();
+				// 点击后气泡播放
+				AnimateBubblePlay();
+				// 
+				AnimateButtonRecord();
 
-		function animateLightAndCameraMove() {
-			camera.position.z = StartPos + DisCamera2Start;
-			PointLight.position.z = StartPos + DisLight2Start;
-			PointLight2.position.z = StartPos + DisCamera2Start * 2;
-		}
-		// 生成动画
-		function animate() {
-			requestAnimationFrame(animate);
-			// 摄像机和灯光运动
-			animateLightAndCameraMove();
-			// 气泡运动
-			animateBubbleMove();
-			// 点击后气泡播放
-			animateBubblePlay();
-			// 
-			animateButtonRecord();
-
+				//console.log(date.getTime());
 			renderer.render(scene, camera);
 		};
 	</script>
