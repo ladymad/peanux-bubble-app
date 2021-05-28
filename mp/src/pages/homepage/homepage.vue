@@ -6,6 +6,7 @@
 
 <script lang="ts">
 import Bubble from "@/modal/Bubble";
+import scene from "@/components/scene.vue";
 import Vue from "vue";
 import {
   Component,
@@ -20,7 +21,6 @@ import {
 @Component
 export default class PageThree extends Vue {
   // 初始化数据
-  private bubble: Bubble[] = [];
 
   // 声明周期钩子
   // mounted() {}
@@ -41,7 +41,8 @@ export default class PageThree extends Vue {
   background-color: black;
   background-image: radial-gradient(white 1%, black 80%, black);
   margin: 0px;
-  height: calc(100vh - 44px - env(safe-area-inset-top));
+  /* height: calc(100vh - 44px - env(safe-area-inset-top)); */
+  height: 100vh;
   width: 100vw;
 }
 </style>

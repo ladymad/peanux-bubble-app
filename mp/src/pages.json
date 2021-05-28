@@ -6,12 +6,13 @@
 			}
 		},
 		{
-			"path": "pages/index/index",
+			"path": "pages/peresonal/peresonal",
 			"style": {
 			}
 		}
 	],
 	"globalStyle": {
+		"navigationStyle":"custom",
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "气泡气泡",
 		"navigationBarBackgroundColor": "#F8F8F8",
