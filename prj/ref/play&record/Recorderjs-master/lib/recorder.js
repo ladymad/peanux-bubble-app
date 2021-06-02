@@ -34,7 +34,7 @@ var Recorder = exports.Recorder = function () {
 
         Object.assign(this.config, cfg);
         this.context = source.context;
-        this.node = (this.context.createScriptProcessor || this.context.createJavaScriptNode).call(this.context, this.config.bufferLen, this.config.numChannels, this.config.numChannels);
+        this.node = (this.context.createAudioWorkletNode || this.context.createJavaScriptNode).call(this.context, this.config.bufferLen, this.config.numChannels, this.config.numChannels);
 
         this.node.onaudioprocess = function (e) {
             if (!_this.recording) return;

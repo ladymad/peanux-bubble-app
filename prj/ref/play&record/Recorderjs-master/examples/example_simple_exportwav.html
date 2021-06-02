@@ -24,7 +24,7 @@
   
   <h2>Log</h2>
   <pre id="log"></pre>
-
+  <script src="../../../../lib/jquery.js"></script>
   <script>
   function __log(e, data) {
     log.innerHTML += "\n" + e + " " + (data || '');
@@ -60,6 +60,7 @@
     
     // create WAV download link using audio data blob
     createDownloadLink();
+    createLocalFile();
     
     recorder.clear();
   }
@@ -80,6 +81,26 @@
       li.appendChild(hf);
       recordingslist.appendChild(li);
     });
+  }
+
+  function createLocalFile() {
+    recorder && recorder.exportWAV(function (wav_file) {
+				console.log(wav_file);
+				var formdata = new FormData(); // form 表单 {key:value}
+				formdata.append("audio", wav_file); // form input type="file"
+				$.ajax({
+					url: "/receive_audio",
+					type: 'post',
+					processData: false,
+					contentType: false,
+					data: formdata,
+					dataType: 'json',
+					success: function (data) {
+					console.log(data);
+					document.getElementById("player").src = "/get_audio/" + data.filename;
+					}
+				})
+		});
   }
 
   window.onload = function init() {

@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="utf-8">
-	<title>3D BUBBLEs</title>
+	<title>DARK STARs</title>
 	<style>
 		body {
 			width: 100;
@@ -18,7 +18,7 @@
 	<script src="./lib/jquery.js"></script>
 	<script src="./lib/three.js"></script>
 	<script type="module">
-		import { GUI } from '../lib/dat.gui.module.js';
+		import { GUI } from './lib/dat.gui.module.js';
 		// 窗口
 		//const windowW = window.innerWidth;
 		//const windowH = window.innerHeight;
@@ -32,16 +32,17 @@
 		var buttonRecord = [];
 
 		var StartPos = 0;
-		var DisCamera2Start = 300;
-		var DisLight2Start = 60;
+		var DisCamera2Start = 250;
+		var DisLight2Start = 50;
 		var DisButton2Start = DisCamera2Start-25;
 		var rate = 1;
 		var MoveCameraSpeed = 0.5*rate;
-		var MoveBubbleSpeedMax = 0.4*rate;
+		var MoveBubbleSpeedMax = 0.5*rate;
 		var BubbleRotateSpeed = 0.003*rate;
 		var CreateBubbleFrame = 100/rate;
 
 		var audio = null;
+		var DebugMode = 0;
 		var PlayState = 0; // 0: Not Playing, 1: Playing
 		var RecordState = 0; // 0: Not Recording, 1: Recording
 		var debugState = {
@@ -151,7 +152,6 @@
 			].join('\n')
 		}
 
-
 		// 设置场景和摄像机
 		const scene = new THREE.Scene();
 		const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
@@ -189,7 +189,9 @@
 		// 开始
 		function Start() {
 			// GUI
-			CreateGUI();
+			if (DebugMode) {
+				CreateGUI();
+			}
 			// 生成录音按钮
 			CreateButtonRecord();
 			// 生成气泡
@@ -457,6 +459,12 @@
 			}
 			
 		function AnimateBubblePlay() {
+			if (PlayState==0) {
+				for (let i = 0; i < bubblePlay.length; i++) {
+					scene.remove(bubblePlay[i]);
+				}
+				return;
+			}
 			if (bubblePlay.length>1 && PlayState==1) {
 				for (let i=1;i<bubblePlay.length;i++) {
 					var bubbleAero = bubblePlay[i];
