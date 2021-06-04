@@ -39,10 +39,11 @@
 		var MoveCameraSpeed = 0.5*rate;
 		var MoveBubbleSpeedMax = 0.5*rate;
 		var BubbleRotateSpeed = 0.003*rate;
-		var CreateBubbleFrame = 100/rate;
+		var CreateBubbleFrame = 50/rate;
+		var StarTexNum = 9;
 
 		var audio = null;
-		var DebugMode = 0;
+		var DebugMode = 1;
 		var PlayState = 0; // 0: Not Playing, 1: Playing
 		var RecordState = 0; // 0: Not Recording, 1: Recording
 		var debugState = {
@@ -250,6 +251,7 @@
 					for (let i=0;i<bubblePlay.length;i++) {
 						scene.remove(bubblePlay[i]);
 					}
+					if (audio!=null) {audio.pause();}
 					scene.remove(buttonRecord[1]);
 					scene.add(buttonRecord[2]);
 				}
@@ -350,13 +352,12 @@
 				//apc: 0
 			};
 			const geometry = new THREE.SphereGeometry(bubbleParam.InitRadius, 30, 30);
-			//const material = new THREE.MeshPhongMaterial();
-
-			var texture = new THREE.TextureLoader().load("./tex/cosmos.jfif", res => {
-				const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
-				//material.map = res;
+			//const material = new THREE.MeshPhongMaterial();//Math.ceil(Math.random()*StarTexNum)
+			var texture = new THREE.TextureLoader().load("./tex/StarTex/tex"+1+".jpg", res => {
+				const material = new THREE.MeshPhongMaterial({ color: 0xffffff});
+				material.map = res;
 				material.bumpMap = res;
-				material.bumpScale = 0.7;
+				material.bumpScale = 0.9;
 				var bubble = new THREE.Mesh(geometry, material);
 
 				bubble.position.x = 0;
@@ -395,7 +396,7 @@
 
 			var sphereGlow = new THREE.SphereGeometry(Params.InitRadius, 32, 32);
 			var colorGlow = Math.random() * 16777215;
-			var bubbleGlow = new THREE.Mesh(sphereGlow, new THREE.MeshBasicMaterial({ color: colorGlow, transparent: true, opacity: 1.0 }));
+			var bubbleGlow = new THREE.Mesh(sphereGlow, new THREE.MeshBasicMaterial({ color: colorGlow, transparent: true, opacity: 0.9 }));
 			bubbleGlow.param = JSON.parse(JSON.stringify(Params));
 			bubbleGlow.position.x = Pos.x;
 			bubbleGlow.position.y = Pos.y;

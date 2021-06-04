@@ -11,52 +11,47 @@
 </head>
 <body>
 
-  <h1>Recorder.js simple WAV export example</h1>
-
-  <p>Make sure you are using a recent version of Google Chrome.</p>
-  <p>Also before you enable microphone input either plug in headphones or turn the volume down if you want to avoid ear splitting feedback!</p>
-
   <button onclick="startRecording(this);">record</button>
   <button onclick="stopRecording(this);" disabled>stop</button>
   
-  <h2>Recordings</h2>
   <ul id="recordingslist"></ul>
   
-  <h2>Log</h2>
-  <pre id="log"></pre>
   <script src="../../../../lib/jquery.js"></script>
   <script>
-  function __log(e, data) {
+    /***
+  function console.log(e, data) {
     log.innerHTML += "\n" + e + " " + (data || '');
   }
-
+***/
   var audio_context;
   var recorder;
 
+  init();
+
   function startUserMedia(stream) {
     var input = audio_context.createMediaStreamSource(stream);
-    __log('Media stream created.');
+    console.log('Media stream created.');
 
     // Uncomment if you want the audio to feedback directly
     //input.connect(audio_context.destination);
-    //__log('Input connected to audio context destination.');
+    //console.log('Input connected to audio context destination.');
     
     recorder = new Recorder(input);
-    __log('Recorder initialised.');
+    console.log('Recorder initialised.');
   }
 
   function startRecording(button) {
     recorder && recorder.record();
     button.disabled = true;
     button.nextElementSibling.disabled = false;
-    __log('Recording...');
+    console.log('Recording...');
   }
 
   function stopRecording(button) {
     recorder && recorder.stop();
     button.disabled = true;
     button.previousElementSibling.disabled = false;
-    __log('Stopped recording.');
+    console.log('Stopped recording.');
     
     // create WAV download link using audio data blob
     createDownloadLink();
@@ -90,7 +85,7 @@
 				formdata.append("audio", wav_file); // form input type="file"
 				$.ajax({
 					url: "/receive_audio",
-					type: 'post',
+					type: 'get',
 					processData: false,
 					contentType: false,
 					data: formdata,
@@ -103,7 +98,7 @@
 		});
   }
 
-  window.onload = function init() {
+  function init() {
     try {
       // webkit shim
       window.AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -111,14 +106,14 @@
       window.URL = window.URL || window.webkitURL;
       
       audio_context = new AudioContext;
-      __log('Audio context set up.');
-      __log('navigator.getUserMedia ' + (navigator.getUserMedia ? 'available.' : 'not present!'));
+      console.log('Audio context set up.');
+      console.log('navigator.getUserMedia ' + (navigator.getUserMedia ? 'available.' : 'not present!'));
     } catch (e) {
       alert('No web audio support in this browser!');
     }
     
     navigator.getUserMedia({audio: true}, startUserMedia, function(e) {
-      __log('No live audio input: ' + e);
+      console.log('No live audio input: ' + e);
     });
   };
   </script>

@@ -43,8 +43,8 @@
 
 			var raycaster = new THREE.Raycaster();
 			var mouse = new THREE.Vector2();
-			/***
-			var reco = null;
+			
+			var recordcer = null;
 			var audio_context = new AudioContext();//音频内容对象
 			navigator.getUserMedia = (navigator.getUserMedia ||
 			navigator.webkitGetUserMedia ||
@@ -54,16 +54,16 @@
 			navigator.getUserMedia({audio: true}, create_stream, function (err) {
 			console.log(err)
 			});
-			***/
+			
 
-			var audio_context;
-			var recorder;
+			//var audio_context;
+			//var recorder;
 
 			CreateBubble();
 			animate();
 
 			window.addEventListener('click', onMouseClick, false);
-
+			/***
 			function startUserMedia(stream) {
 				var input = audio_context.createMediaStreamSource(stream);
 				console.log('Media stream created.');
@@ -76,7 +76,7 @@
 				console.
 				console.log('Recorder initialised.');
 			}
-
+			****/
 			function startRecording() {
 				recorder && recorder.start();
 				//button.disabled = true;
@@ -139,7 +139,8 @@
 
 			function create_stream(user_media) {
 				var stream_input = audio_context.createMediaStreamSource(user_media);
-				reco = new Recorder(stream_input);
+				recorder = new Recorder(stream_input);
+				console.log("recorder:"+recorder)
 			}
 
 			function AudioPlay() {
@@ -263,7 +264,7 @@
 
 				renderer.render( scene, camera );
 			};
-
+			/***
 			window.onload = function init() {
 				try {
 				// webkit shim
@@ -282,7 +283,7 @@
 				__log('No live audio input: ' + e);
 				});
 			};
-
+			***/
 		</script>
 	</body>
 </html>
