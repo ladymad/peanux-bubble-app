@@ -8,7 +8,7 @@
 		body {
 			width: 100;
 			background-color: black;
-			background-image: radial-gradient(white 5%, black 90%);
+			background-image: radial-gradient(white 5%, black 80%);
 			margin: 0px;
 		}
 	</style>
@@ -42,6 +42,9 @@
 		var CreateBubbleFrame = 50/rate;
 		var StarTexNum = 9;
 
+		var PointLight, DirectionalLight;
+		var materialAero, materialGlow;
+
 		var audio = null;
 		var DebugMode = 1;
 		var PlayState = 0; // 0: Not Playing, 1: Playing
@@ -59,100 +62,6 @@
 			buttonRecord:2,
 		};
 
-		var vertexShader = [
-			'varying vec3	vVertexWorldPosition;',
-			'varying vec3	vVertexNormal;',
-			'varying vec4	vFragColor;',
-			'void main(){',
-			'	vVertexNormal	= normalize(normalMatrix * normal);',//将法线转换到视图坐标系中
-			'	vVertexWorldPosition	= (modelMatrix * vec4(position, 1.0)).xyz;',//将顶点转换到世界坐标系中
-			'	// set gl_Position',
-			'	gl_Position	= projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-			'}'
-
-		].join('\n');
-
-		//大气层效果
-		THREE.AeroSphere = {
-			uniforms: {
-				coeficient: {
-					type: "f",
-					value: 1.0
-				},
-				power: {
-					type: "f",
-					value: 2
-				},
-				glowColor: {
-					type: "c",
-					value: new THREE.Color(0xffffff)
-				}
-			},
-			vertexShader: vertexShader,
-			fragmentShader: [
-				'uniform vec3	glowColor;',
-				'uniform float	coeficient;',
-				'uniform float	power;',
-
-				'varying vec3	vVertexNormal;',
-				'varying vec3	vVertexWorldPosition;',
-
-				'varying vec4	vFragColor;',
-
-				'void main(){',
-				'	vec3 worldCameraToVertex= vVertexWorldPosition - cameraPosition;',	//世界坐标系中从相机位置到顶点位置的距离
-				'	vec3 viewCameraToVertex	= (viewMatrix * vec4(worldCameraToVertex, 0.0)).xyz;',//视图坐标系中从相机位置到顶点位置的距离
-				'	viewCameraToVertex	= normalize(viewCameraToVertex);',//规一化
-				'	float intensity		= pow(coeficient + dot(vVertexNormal, viewCameraToVertex), power);',
-				'	gl_FragColor		= vec4(glowColor, intensity);',
-				'}'//vVertexNormal视图坐标系中点的法向量
-				//viewCameraToVertex视图坐标系中点到摄像机的距离向量
-				//dot点乘得到它们的夹角的cos值
-				//从中心向外面角度越来越小（从钝角到锐角）从cos函数也可以知道这个值由负变正，不透明度最终从低到高
-			].join('\n')
-		}
-
-		//辉光效果Glow
-		THREE.GlowSphere = {
-			uniforms: {
-				coeficient: {
-					type: "f",
-					value: 1
-				},
-				power: {
-					type: "f",
-					value: 1
-				},
-				glowColor: {
-					type: "c",
-					value: new THREE.Color(0x0fffff)
-				}
-			},
-			vertexShader: vertexShader,
-			fragmentShader: [
-				'uniform vec3	glowColor;',
-				'uniform float	coeficient;',
-				'uniform float	power;',
-
-				'varying vec3	vVertexNormal;',
-				'varying vec3	vVertexWorldPosition;',
-
-				'varying vec4	vFragColor;',
-
-				'void main(){',
-				'	vec3 worldVertexToCamera= cameraPosition - vVertexWorldPosition;',	//世界坐标系中顶点位置到相机位置到的距离
-				'	vec3 viewCameraToVertex	= (viewMatrix * vec4(worldVertexToCamera, 0.0)).xyz;',//视图坐标系中从相机位置到顶点位置的距离
-				'	viewCameraToVertex	= normalize(viewCameraToVertex);',//规一化
-				'	float intensity		= coeficient + dot(vVertexNormal, viewCameraToVertex);',
-				'	if(intensity > 0.65){ intensity = 0.0;}',
-				'	gl_FragColor		= vec4(glowColor, intensity);',
-				'}'//vVertexNormal视图坐标系中点的法向量
-				//viewCameraToVertex视图坐标系中点到摄像机的距离向量
-				//dot点乘得到它们的夹角的cos值
-				//从中心向外面角度越来越大（从锐角到钝角）从cos函数也可以知道这个值由负变正，不透明度最终从高到低
-			].join('\n')
-		}
-
 		// 设置场景和摄像机
 		const scene = new THREE.Scene();
 		const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
@@ -162,20 +71,6 @@
 		const renderer = new THREE.WebGLRenderer({ alpha: true });
 		renderer.setSize(window.innerWidth, window.innerHeight);
 		document.body.appendChild(renderer.domElement);
-
-		// 设置点光源
-		//const LightSphere = new THREE.SphereGeometry( 10, 16, 8 );
-		var PointLight = new THREE.PointLight(0xffffff, 100, 0);
-		//PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
-		PointLight.visible = true;
-		PointLight.position.z = StartPos + DisLight2Start;
-		scene.add(PointLight);
-
-		var PointLight2 = new THREE.PointLight(0xffffff, 0.3, 0);
-		//PointLight.add( new THREE.Mesh( LightSphere, new THREE.MeshBasicMaterial( { color: 0xffffff } ) ) );
-		PointLight2.visible = true;
-		PointLight2.position.z = StartPos + DisCamera2Start * 2;
-		scene.add(PointLight2);
 
 		// 鼠标点击
 		var raycaster = new THREE.Raycaster();
@@ -193,6 +88,10 @@
 			if (DebugMode) {
 				CreateGUI();
 			}
+			// 生成材质
+			CreateMaterial();
+			// 生成光源
+			CreateLight();
 			// 生成录音按钮
 			CreateButtonRecord();
 			// 生成气泡
@@ -209,6 +108,135 @@
 			gui.add(debugState, 'bubbleSpeedXYmax', 0.01, 2.0, 0.01).onChange(e => { MoveBubbleSpeedMax = e });
 			gui.add(debugState, 'bubbleSpeedZmaz', 0.01, 2.0, 0.01).onChange(e => { MoveCameraSpeed = e });
 			gui.add(debugState, 'bubbleRotateSpeed', 0.001, 0.02, 0.001).onChange(e => { BubbleRotateSpeed = e });
+		}
+
+		function CreateMaterial() {
+			var vertexShader = [
+				'varying vec3	vVertexWorldPosition;',
+				'varying vec3	vVertexNormal;',
+				'varying vec4	vFragColor;',
+				'void main(){',
+				'	vVertexNormal	= normalize(normalMatrix * normal);',//将法线转换到视图坐标系中
+				'	vVertexWorldPosition	= (modelMatrix * vec4(position, 1.0)).xyz;',//将顶点转换到世界坐标系中
+				'	// set gl_Position',
+				'	gl_Position	= projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+				'}'
+
+			].join('\n');
+
+			//大气层效果
+			THREE.AeroSphere = {
+				uniforms: {
+					coeficient: {
+						type: "f",
+						value: 1.0
+					},
+					power: {
+						type: "f",
+						value: 2
+					},
+					glowColor: {
+						type: "c",
+						value: new THREE.Color(0xffffff)
+					}
+				},
+				vertexShader: vertexShader,
+				fragmentShader: [
+					'uniform vec3	glowColor;',
+					'uniform float	coeficient;',
+					'uniform float	power;',
+
+					'varying vec3	vVertexNormal;',
+					'varying vec3	vVertexWorldPosition;',
+
+					'varying vec4	vFragColor;',
+
+					'void main(){',
+					'	vec3 worldCameraToVertex= vVertexWorldPosition - cameraPosition;',	//世界坐标系中从相机位置到顶点位置的距离
+					'	vec3 viewCameraToVertex	= (viewMatrix * vec4(worldCameraToVertex, 0.0)).xyz;',//视图坐标系中从相机位置到顶点位置的距离
+					'	viewCameraToVertex	= normalize(viewCameraToVertex);',//规一化
+					'	float intensity		= pow(coeficient + dot(vVertexNormal, viewCameraToVertex), power);',
+					'	gl_FragColor		= vec4(glowColor, intensity);',
+					'}'//vVertexNormal视图坐标系中点的法向量
+					//viewCameraToVertex视图坐标系中点到摄像机的距离向量
+					//dot点乘得到它们的夹角的cos值
+					//从中心向外面角度越来越小（从钝角到锐角）从cos函数也可以知道这个值由负变正，不透明度最终从低到高
+				].join('\n')
+			}
+
+			//辉光效果Glow
+			THREE.GlowSphere = {
+				uniforms: {
+					coeficient: {
+						type: "f",
+						value: 1
+					},
+					power: {
+						type: "f",
+						value: 1
+					},
+					glowColor: {
+						type: "c",
+						value: new THREE.Color(0x0fffff)
+					}
+				},
+				vertexShader: vertexShader,
+				fragmentShader: [
+					'uniform vec3	glowColor;',
+					'uniform float	coeficient;',
+					'uniform float	power;',
+
+					'varying vec3	vVertexNormal;',
+					'varying vec3	vVertexWorldPosition;',
+
+					'varying vec4	vFragColor;',
+
+					'void main(){',
+					'	vec3 worldVertexToCamera= cameraPosition - vVertexWorldPosition;',	//世界坐标系中顶点位置到相机位置到的距离
+					'	vec3 viewCameraToVertex	= (viewMatrix * vec4(worldVertexToCamera, 0.0)).xyz;',//视图坐标系中从相机位置到顶点位置的距离
+					'	viewCameraToVertex	= normalize(viewCameraToVertex);',//规一化
+					'	float intensity		= coeficient + dot(vVertexNormal, viewCameraToVertex);',
+					'	if(intensity > 0.65){ intensity = 0.0;}',
+					'	gl_FragColor		= vec4(glowColor, intensity);',
+					'}'//vVertexNormal视图坐标系中点的法向量
+					//viewCameraToVertex视图坐标系中点到摄像机的距离向量
+					//dot点乘得到它们的夹角的cos值
+					//从中心向外面角度越来越大（从锐角到钝角）从cos函数也可以知道这个值由负变正，不透明度最终从高到低
+				].join('\n')
+			}
+
+			// 生成材质
+			materialAero = new THREE.ShaderMaterial({
+				uniforms: THREE.AeroSphere.uniforms,
+				vertexShader: THREE.AeroSphere.vertexShader,
+				fragmentShader: THREE.AeroSphere.fragmentShader,
+				blending: THREE.NormalBlending,
+				transparent: true,
+				opacity: 0,
+				depthWrite: false
+			});
+			materialGlow = new THREE.ShaderMaterial({
+				uniforms: THREE.GlowSphere.uniforms,
+				vertexShader: THREE.GlowSphere.vertexShader,
+				fragmentShader: THREE.GlowSphere.fragmentShader,
+				blending: THREE.NormalBlending,
+				transparent: false,
+			});
+
+		}
+
+		function CreateLight() {
+			PointLight = new THREE.PointLight(0xffffff, 50, 100);
+			PointLight.position.z = StartPos + DisLight2Start;
+			scene.add(PointLight);
+
+			DirectionalLight = new THREE.DirectionalLight("#ffffff");
+			DirectionalLight.position.set(0,0,0.01);
+			DirectionalLight.intensity = 0.5;
+			//console.log(DirectionalLight);
+			//告诉平行光需要开启阴影投射
+			DirectionalLight.castShadow = true;
+			scene.add(DirectionalLight);
 		}
 
 		// 单击事件
@@ -279,15 +307,7 @@
 			for (let i=0;i<buttonRecord.length;i++) {
 				scene.remove(buttonRecord[i]);
 			}
-			var materialAero = new THREE.ShaderMaterial({
-				uniforms: THREE.AeroSphere.uniforms,
-				vertexShader: THREE.AeroSphere.vertexShader,
-				fragmentShader: THREE.AeroSphere.fragmentShader,
-				blending: THREE.NormalBlending,
-				transparent: true,
-				opacity: 0,
-				depthWrite:true
-			});
+
 			var buttonParam = {
 				type: ObjectType.buttonRecord,
 			};
@@ -306,7 +326,10 @@
 
 			//console.log(material1);
 			var sphere = new THREE.SphereGeometry(0.9, 32, 32);
-			var buttonSphere = new THREE.Mesh(sphere, new THREE.MeshBasicMaterial({color:0xff0000}));
+			var material = new THREE.MeshBasicMaterial({color:0xff0000});
+			material.transparent = true;
+			material.opacity = 0.7;
+			var buttonSphere = new THREE.Mesh(sphere, material);
 			buttonSphere.position.x = 0;
 			buttonSphere.position.y = -7;
 			buttonSphere.position.z = StartPos + DisButton2Start;
@@ -316,7 +339,7 @@
 			scene.add(buttonRecord[1]);
 
 			var cubic = new THREE.BoxGeometry(1.0,1.0,1.0);
-			var buttonCubic = new THREE.Mesh(cubic, new THREE.MeshBasicMaterial({color:0xff0000}));
+			var buttonCubic = new THREE.Mesh(cubic,material);
 			buttonCubic.position.x = 0;
 			buttonCubic.position.y = -7;
 			buttonCubic.position.z = StartPos + DisButton2Start;
@@ -353,16 +376,16 @@
 			};
 			const geometry = new THREE.SphereGeometry(bubbleParam.InitRadius, 30, 30);
 			//const material = new THREE.MeshPhongMaterial();//Math.ceil(Math.random()*StarTexNum)
-			var texture = new THREE.TextureLoader().load("./tex/StarTex/tex"+1+".jpg", res => {
+			var texture = new THREE.TextureLoader().load("./tex/StarTex/tex"+2+".jpg", res => {
 				const material = new THREE.MeshPhongMaterial({ color: 0xffffff});
-				material.map = res;
+				//material.map = res;
 				material.bumpMap = res;
 				material.bumpScale = 0.9;
 				var bubble = new THREE.Mesh(geometry, material);
 
 				bubble.position.x = 0;
 				bubble.position.y = 0;
-				bubble.position.z = StartPos + (Math.random() - 0.5) * 70;
+				bubble.position.z = StartPos + (Math.random()) * -70;
 				bubble.param = bubbleParam;
 				//PointLight.position.z -= 0.2;
 				scene.add(bubble);
@@ -376,23 +399,6 @@
 			for (let i = 0; i < bubblePlay.length; i++) {
 				scene.remove(bubblePlay[i]);
 			}
-
-			var materialAero = new THREE.ShaderMaterial({
-				uniforms: THREE.AeroSphere.uniforms,
-				vertexShader: THREE.AeroSphere.vertexShader,
-				fragmentShader: THREE.AeroSphere.fragmentShader,
-				blending: THREE.NormalBlending,
-				transparent: true,
-				opacity: 0,
-				depthWrite: false
-			});
-			var material_glow = new THREE.ShaderMaterial({
-				uniforms: THREE.GlowSphere.uniforms,
-				vertexShader: THREE.GlowSphere.vertexShader,
-				fragmentShader: THREE.GlowSphere.fragmentShader,
-				blending: THREE.NormalBlending,
-				transparent: false,
-			});
 
 			var sphereGlow = new THREE.SphereGeometry(Params.InitRadius, 32, 32);
 			var colorGlow = Math.random() * 16777215;
@@ -479,16 +485,6 @@
 						bubbleAero.radiusChange = + bubbleAero.param.radiusChange;
 					}
 
-				var materialAero = new THREE.ShaderMaterial({
-					uniforms: THREE.AeroSphere.uniforms,
-					vertexShader: THREE.AeroSphere.vertexShader,
-					fragmentShader: THREE.AeroSphere.fragmentShader,
-					blending: THREE.NormalBlending,
-					transparent: true,
-					opacity: 0,
-					depthWrite: true
-				});
-
 					var sphereAero = new THREE.SphereBufferGeometry(bubbleAero.radius + bubbleAero.radiusChange, 32, 32);
 					var meshAero = new THREE.Mesh(sphereAero, materialAero);
 					meshAero.position.x = bubbleAero.position.x;
@@ -516,7 +512,7 @@
 		function AnimateLightAndCameraMove() {
 			camera.position.z = StartPos+DisCamera2Start;
 			PointLight.position.z = StartPos+DisLight2Start;
-			PointLight2.position.z = StartPos+DisCamera2Start*2;
+			//Dire.position.z = StartPos+DisCamera2Start*2;
 			DisButton2Start = DisCamera2Start-25;
 		}
 		// 生成动画
