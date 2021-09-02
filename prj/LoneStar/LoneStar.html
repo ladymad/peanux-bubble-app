@@ -15,17 +15,8 @@
 </head>
 
 <body>
-	<script src="./lib/jquery.js"></script>
 	<script src="./lib/three.js"></script>
 	<script type="module">
-		import { GUI } from './lib/dat.gui.module.js';
-		// 窗口
-		//const windowW = window.innerWidth;
-		//const windowH = window.innerHeight;
-		//window.moveTo(0,0);
-		//window.resizeTo(windowH/2,windowH);
-		//window.onresize=new Function("window.resizeTo(windowH/2,windowH);") 
-
 		// 全局参数设置
 		var bubbles = [];
 		var bubblePlay = [];
@@ -33,7 +24,7 @@
 
 		var StartPos = 0;
 		var DisCamera2Start = 300;
-		var DisLight2Start = 50;
+		var DisLight2Start = 100;
 		var DisButton2Start = DisCamera2Start-25;
 		var rate = 1;
 		var MoveBubbleSpeedMaxZ = 0.2*rate;
@@ -84,32 +75,17 @@
 
 		// 开始
 		function Start() {
-			// GUI
-			if (DebugMode) {
-				CreateGUI();
-			}
 			// 生成材质
 			CreateMaterial();
 			// 生成光源
 			CreateLight();
 			// 生成录音按钮
-			CreateButtonRecord();
+			//CreateButtonRecord();
 			// 生成气泡
-			setInterval(CreateBubbles,CreateBubbleFrame);
+			CreateBubble();
 			// 运动动画
 			Animate();
 		}
-
-		function CreateGUI() {
-			const gui = new GUI();
-			gui.add(debugState, 'PointLightPos', 1, 200, 1).onChange(e => { DisLight2Start = e });
-			//gui.add( debugState, 'ChangeRate', 0.1, 10).onChange( e => { rate = e} );
-			gui.add(debugState, 'CameraPos', 100, 400, 10).onChange(e => { DisCamera2Start = e });
-			gui.add(debugState, 'bubbleSpeedXYmax', 0.01, 2.0, 0.01).onChange(e => { MoveBubbleSpeedMax = e });
-			gui.add(debugState, 'bubbleSpeedZmaz', 0.01, 2.0, 0.01).onChange(e => { MoveBubbleSpeedMaxZ = e });
-			gui.add(debugState, 'bubbleRotateSpeed', 0.001, 0.02, 0.001).onChange(e => { BubbleRotateSpeed = e });
-		}
-
 		function CreateMaterial() {
 			var vertexShader = [
 				'varying vec3	vVertexWorldPosition;',
@@ -226,15 +202,9 @@
 		}
 
 		function CreateLight() {
-			PointLight = new THREE.PointLight(0xffffff, 10, 70);
-			//PointLight.position.z = StartPos + DisLight2Start;
-			PointLight.position.z = StartPos + DisCamera2Start + 200;
+			PointLight = new THREE.PointLight(0xffffff, 100, 70);
+			PointLight.position.z = 170;
 			scene.add(PointLight);
-
-			var PointLight2 = new THREE.PointLight(0xffffff, 10, 50);
-			//PointLight.position.z = StartPos + DisLight2Start;
-			PointLight2.position.z = StartPos + DisLight2Start;
-			//scene.add(PointLight2);
 
 			DirectionalLight = new THREE.DirectionalLight("#ffffff");
 			DirectionalLight.position.set(0,0,0.01);
@@ -274,7 +244,7 @@
 					//console.log(obj.position);
 					scene.remove(obj);
 					CreateBubblePlay(tmpPos,tmpParam);
-					AudioPlay();
+					//AudioPlay();
 				}
 			}
 
@@ -296,7 +266,7 @@
 				}
 			}
 		}
-
+/***
 		function AudioPlay() {
 			if (audio!=null) {audio.pause();}
 			audio = "./aud/demo1.m4a";
@@ -307,7 +277,7 @@
 			})
 			audio.play();
 		}
-
+***/
 		//
 		function CreateButtonRecord() {
 			for (let i=0;i<buttonRecord.length;i++) {
@@ -356,20 +326,20 @@
 		}
 
 		// 生成气泡
-		function CreateBubbles() {
+		function CreateBubble() {
 			var bubbleParam = {
 				//x: (Math.random() - 0.5)*windowW/2,
 				//y: (Math.random() - 0.5)*windowH/2,
 				//applitude: Math.random(),
 				//frequency: Math.random() * 0.01 + 0.01,
-				speedX: (Math.random() - 0.5) * MoveBubbleSpeedMax,
-				speedY: (Math.random() - 0.5) * MoveBubbleSpeedMax,
-				speedZ: (Math.random() - 0.5) * MoveBubbleSpeedMaxZ * 1.5,
-				RotSpeed: Math.random() * BubbleRotateSpeed + BubbleRotateSpeed,
+				speedX: 0,
+				speedY: 0,
+				speedZ: 0,
+				RotSpeed: 0.01,
 				//speedZ: (Math.random() - 0.5)*0.5,
 				radiusChange: 0,
 				MaxRadius: 0,
-				InitRadius: Math.random() * 2 + 3,
+				InitRadius: 17,
 				//isClicked: 0,
 				type: ObjectType.bubble,
 				//color: bubbleColor[Math.floor(Math.random()*bubbleColor.length)],
@@ -383,16 +353,16 @@
 			};
 			const geometry = new THREE.SphereGeometry(bubbleParam.InitRadius, 30, 30);
 			//const material = new THREE.MeshPhongMaterial();//Math.ceil(Math.random()*StarTexNum)
-			var texture = new THREE.TextureLoader().load("./tex/StarTex/tex"+1+".jpg", res => {
-				const material = new THREE.MeshLambertMaterial({ color: 0xffffff});
+			var texture = new THREE.TextureLoader().load("./tex/tex.jpg", res => {
+				const material = new THREE.MeshPhongMaterial({ color: 0xffffff});
 				material.map = res;
 				material.bumpMap = res;
-				material.bumpScale = 0.9;
+				material.bumpScale = 0.7;
 				var bubble = new THREE.Mesh(geometry, material);
 
-				bubble.position.x = 0;
+				bubble.position.x = 30;
 				bubble.position.y = 0;
-				bubble.position.z = StartPos + (Math.random()) * -70;
+				bubble.position.z = 200;
 				bubble.param = bubbleParam;
 				//PointLight.position.z -= 0.2;
 				scene.add(bubble);
@@ -460,7 +430,7 @@
 
 				bubble.position.x += bubble.param.speedX;
 				bubble.position.y += bubble.param.speedY;
-				bubble.position.z += bubble.param.speedZ + MoveBubbleSpeedMaxZ;
+				bubble.position.z += bubble.param.speedZ;
 
 				bubble.rotation.x += bubble.param.RotSpeed;
 				bubble.rotation.y += bubble.param.RotSpeed;
@@ -521,10 +491,10 @@
 			//PointLight.position.z = StartPos+DisLight2Start;
 			//Dire.position.z = StartPos+DisCamera2Start*2;
 			DisButton2Start = DisCamera2Start-25;
-			PointLight.position.z -= 1;
-			if (PointLight.position.z<StartPos-70) {
-				PointLight.position.z = StartPos + DisCamera2Start + 50;
-			}
+			//PointLight.position.z -= 1;
+			//if (PointLight.position.z<StartPos-70) {
+			//	PointLight.position.z = StartPos + DisCamera2Start + 50;
+			//}
 		}
 		// 生成动画
 		function Animate() {

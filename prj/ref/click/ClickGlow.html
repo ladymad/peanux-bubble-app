@@ -16,7 +16,7 @@
 		</style>
 	</head>
 	<body>
-		<script src="../../lib/three.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r67/three.min.js"></script>
 		<script>
 			const scene = new THREE.Scene();
 			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -220,7 +220,7 @@
 
 			function CreateBubble() {
 				var geometry = new THREE.SphereGeometry(1,30,30);
-				var res = new THREE.TextureLoader().load("../../tex/tex1.jpg", res=>{
+				var res = new THREE.TextureLoader().load("../../tex/StarTex/tex1.jpg", res=>{
 				var material = new THREE.MeshPhongMaterial( {color:0xffffff} );
 				//material.map = res;
 				material.bumpMap = res;
